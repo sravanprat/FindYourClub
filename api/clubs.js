@@ -7,8 +7,7 @@ export default async function handler(req, res) {
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   try {
-    // Search for the school's club page using Brave Search
-    let schoolClubUrl = null;
+    let searchLinks = [];
     let searchContext = '';
 
     if (school && process.env.BRAVE_SEARCH_API_KEY) {
@@ -19,16 +18,9 @@ export default async function handler(req, res) {
       );
       if (searchRes.ok) {
         const searchData = await searchRes.json();
-        const results = searchData.web?.results || [];
-
-        // Pick the most relevant URL — prefer pages with "club", "activit", "organization" in URL or title
-        const best = results.find(r =>
-          /club|activit|organization|student.*life/i.test(r.url + ' ' + r.title)
-        ) || results[0];
-
-        if (best) {
-          schoolClubUrl = best.url;
-          searchContext = `\n\nI found this page for "${school}" clubs and activities: ${best.url} — "${best.title}". Use this URL in the "url" field for every club in your response.`;
+        searchLinks = (searchData.web?.results || []).map(r => ({ title: r.title, url: r.url }));
+        if (searchLinks.length) {
+          searchContext = `\n\nWeb search found these pages for "${school}": ${searchLinks.map(l => l.url).join(', ')}. Use this context to improve your recommendations.`;
         }
       }
     }
@@ -53,7 +45,7 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    return res.status(200).json({ text: data.content[0].text, schoolClubUrl });
+    return res.status(200).json({ text: data.content[0].text, searchLinks });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

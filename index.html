@@ -890,14 +890,14 @@ For the "url" field: only include a real URL if you are highly confident it is t
 
     const data = await res.json();
     const raw  = data.text.trim();
-    const schoolClubUrl = data.schoolClubUrl || null;
+    const searchLinks = data.searchLinks || [];
 
     // Extract JSON from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Could not parse response. Try again.');
     const parsed = JSON.parse(jsonMatch[0]);
 
-    renderResults(parsed, school, jobObjs, schoolClubUrl);
+    renderResults(parsed, school, jobObjs, searchLinks);
 
   } catch (err) {
     document.getElementById('loadingBox').style.display = 'none';
@@ -908,7 +908,7 @@ For the "url" field: only include a real URL if you are highly confident it is t
   }
 }
 
-function renderResults(data, school, jobObjs, schoolClubUrl) {
+function renderResults(data, school, jobObjs, searchLinks) {
   document.getElementById('loadingBox').style.display = 'none';
   const el = document.getElementById('resultsContent');
   el.style.display = 'block';
@@ -926,17 +926,6 @@ function renderResults(data, school, jobObjs, schoolClubUrl) {
     html += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13px;color:#92400e;margin-bottom:16px">ℹ️ ${data.school_note}</div>`;
   }
 
-  function clubLink(club) {
-    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(club.name + ' ' + school)}`;
-    const resolvedUrl = (club.url && club.url !== 'null' && club.url.startsWith('http'))
-      ? club.url
-      : schoolClubUrl;
-    if (resolvedUrl) {
-      return `<a href="${resolvedUrl}" target="_blank" rel="noopener" class="club-link club-link-school">🏫 School Page</a>`;
-    }
-    return `<a href="${googleUrl}" target="_blank" rel="noopener" class="club-link club-link-google">🔍 Google Search</a>`;
-  }
-
   if (high.length) {
     html += `<div class="club-section"><div class="club-section-title">⭐ Top Priority — Join These First</div>`;
     high.forEach((club,i) => {
@@ -945,10 +934,7 @@ function renderResults(data, school, jobObjs, schoolClubUrl) {
         <div class="club-body">
           <div class="club-name">${club.name}</div>
           <div class="club-why">${club.why}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
-            <span class="club-priority priority-high">High Priority</span>
-            ${clubLink(club)}
-          </div>
+          <span class="club-priority priority-high">High Priority</span>
         </div>
       </div>`;
     });
@@ -963,14 +949,26 @@ function renderResults(data, school, jobObjs, schoolClubUrl) {
         <div class="club-body">
           <div class="club-name">${club.name}</div>
           <div class="club-why">${club.why}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
-            <span class="club-priority priority-medium">Medium Priority</span>
-            ${clubLink(club)}
-          </div>
+          <span class="club-priority priority-medium">Medium Priority</span>
         </div>
       </div>`;
     });
     html += `</div>`;
+  }
+
+  if (searchLinks.length) {
+    html += `<div class="club-section"><div class="club-section-title">🔗 Recommended Links</div>`;
+    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+    searchLinks.forEach(link => {
+      html += `<a href="${link.url}" target="_blank" rel="noopener"
+        style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;transition:border-color .15s"
+        onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
+        <span style="font-size:18px">🏫</span>
+        <span style="font-size:13px;font-weight:600;color:var(--text)">${link.title}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap">↗</span>
+      </a>`;
+    });
+    html += `</div></div>`;
   }
 
   html += `
