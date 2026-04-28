@@ -447,13 +447,8 @@
       <p class="input-hint" id="schoolHint">Start typing — searches all US public high schools</p>
     </div>
 
-    <div class="input-card" style="margin-top:12px">
-      <label for="clubUrlInput">🔗 School Club Page <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-      <input type="url" id="clubUrlInput" placeholder="Paste your school's club directory URL…" autocomplete="off"/>
-      <p class="input-hint">For better recommendations — paste a link to your school's club or activities page</p>
-    </div>
 
-    <div class="btn-row">
+<div class="btn-row">
       <button class="btn btn-ghost" onclick="showScreen('jobs')">← Back</button>
       <button class="btn btn-primary" id="schoolNextBtn" onclick="getClubs()" disabled>Find My Clubs 🎯</button>
     </div>
@@ -849,7 +844,6 @@ function checkSchoolForm() {
 // ── CLAUDE API CALL ──
 async function getClubs() {
   const school  = selectedSchool;
-  const clubUrl = document.getElementById('clubUrlInput').value.trim();
 
   const jobObjs = selectedJobs.map(id => JOBS.find(x=>x.id===id));
   const jobNames = jobObjs.map(j=>j.title).join(' and ');
@@ -859,14 +853,10 @@ async function getClubs() {
   document.getElementById('loadingBox').style.display    = 'block';
   document.getElementById('resultsContent').style.display = 'none';
 
-  const clubUrlNote = clubUrl
-    ? `The student has provided their school's club directory: ${clubUrl} — use this as your primary source for what clubs exist at this school and include the specific page URL for each club if you can derive it from the directory URL.`
-    : `Search your knowledge for clubs that likely exist at "${school}". If uncertain, recommend clubs typical for similar schools in that area.`;
-
   const prompt = `A high school freshman at "${school}" is interested in becoming a ${jobNames}.
 
 Your task:
-1. ${clubUrlNote}
+1. Search your knowledge for clubs that likely exist at "${school}". If uncertain, recommend clubs typical for similar schools in that area.
 2. Recommend the TOP 5-7 clubs this student should join, ranked by importance for their career goals.
 3. For each club explain in 1-2 sentences WHY it specifically helps with ${jobNames}.
 4. Mark each as HIGH or MEDIUM priority.
