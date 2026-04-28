@@ -2,53 +2,61 @@
 
 FindYourClub helps high school students discover the right clubs based on their interests and career goals.
 
-Live at: https://find-your-club-seven.vercel.app
+🌐 Live at: https://find-your-club-seven.vercel.app
 
 ---
 
-## Architecture
+## How It's Built
 
 ```mermaid
-flowchart TD
-    User(["👤 Student"])
+flowchart LR
+    classDef student fill:#fef3c7,stroke:#f59e0b,color:#92400e,font-weight:bold
+    classDef frontend fill:#e0e7ff,stroke:#6366f1,color:#3730a3,font-weight:bold
+    classDef backend fill:#6366f1,stroke:#4f46e5,color:#ffffff,font-weight:bold
+    classDef search fill:#fef9c3,stroke:#eab308,color:#713f12,font-weight:bold
+    classDef llm fill:#f3e8ff,stroke:#8b5cf6,color:#5b21b6,font-weight:bold
+    classDef data fill:#d1fae5,stroke:#10b981,color:#065f46,font-weight:bold
 
-    subgraph Browser ["Frontend — Vercel Static"]
-        UI["HTML / CSS / JS\nQuiz → Career Match → School Search → Results"]
+    S(["👤 Student\nopens the site"]):::student
+
+    subgraph FE ["🖥️  Frontend  —  runs in the browser"]
+        Q["❓ Quiz\n5 interest questions"]:::frontend
+        C["💼 Career Match\npick up to 2 careers"]:::frontend
+        SC["🏫 School Search\ntype your school name"]:::frontend
+        R["🎯 Results\nclub cards + links"]:::frontend
     end
 
-    subgraph Vercel ["Backend — Vercel Serverless"]
-        Fn["/api/clubs\nOrchestrator"]
+    subgraph BE ["⚡ Backend  —  Vercel Serverless Function"]
+        API["/api/clubs\n orchestrates everything"]:::backend
     end
 
-    subgraph External ["External APIs"]
-        ODS["🏫 OpenDataSoft\nUS Public Schools Dataset"]
-        Brave["🔍 Brave Search API\nSchool Club Page Lookup"]
-        Claude["🤖 Claude Haiku\nAnthropic LLM"]
+    subgraph AI ["🤖 AI Layer  —  Agentic LLM Pattern"]
+        BRAVE["🔍 Step 1 — Brave Search\nfinds real club pages\nfor the school"]:::search
+        INJECT["💉 Step 2 — Context Injection\nURL results added\nto Claude's prompt"]:::backend
+        LLM["✨ Step 3 — Claude Haiku\ngenerates ranked clubs\nas structured JSON"]:::llm
     end
 
-    User -->|"Takes quiz &\nselects school"| UI
-    UI -->|"School name search"| ODS
-    ODS -->|"Returns matching schools"| UI
-    UI -->|"POST school + career prompt"| Fn
+    ODS[("🗄️ OpenDataSoft\n102K US Schools\ndatabase")]:::data
 
-    Fn -->|"1 — Search for school's\nclub pages"| Brave
-    Brave -->|"Returns top 5 URLs\n& page titles"| Fn
-    Fn -->|"2 — Prompt + search\nresults as context"| Claude
-    Claude -->|"Returns ranked club\nrecommendations as JSON"| Fn
-    Fn -->|"Club list + research links"| UI
-    UI -->|"Displays results"| User
+    S --> Q --> C --> SC
+    SC -- "search school name" --> ODS
+    ODS -- "returns matching schools" --> SC
+    SC --> R
 
-    style Fn fill:#6366f1,color:#fff
-    style Claude fill:#8b5cf6,color:#fff
-    style Brave fill:#f59e0b,color:#fff
-    style ODS fill:#10b981,color:#fff
+    R -- "POST: school + careers" --> API
+    API --> BRAVE
+    BRAVE -- "top 5 URLs + titles" --> INJECT
+    INJECT --> LLM
+    LLM -- "JSON: clubs + reasons" --> API
+    API -- "clubs + research links" --> R
 ```
 
-### How the Agentic LLM Pattern Works
+### 🧠 The Agentic LLM Pattern — Search → Inject → Generate
 
-1. **Tool Call** — Before asking Claude anything, the Vercel function calls Brave Search as a tool to find real web pages for the selected school's clubs and activities.
-2. **Context Injection** — The search results (URLs + titles) are injected into the Claude prompt as grounding context.
-3. **Grounded Generation** — Claude generates club recommendations informed by real, up-to-date web sources rather than relying solely on training data.
-4. **Structured Output** — Claude returns JSON, which the frontend parses to render ranked club cards and a Recommended Links section.
+| Step | What happens | Why it matters |
+|------|-------------|----------------|
+| 🔍 **Search** | Brave Search finds real web pages for the school's clubs | Grounds the AI in real data, not just training memory |
+| 💉 **Inject** | Search results are added to Claude's prompt as context | The LLM sees actual URLs and page titles before answering |
+| ✨ **Generate** | Claude returns ranked clubs + reasons as structured JSON | Output is reliable, parseable, and personalized |
 
-This pattern — **search → inject → generate** — is the core of agentic LLM design: the model is given tools to gather context before it reasons.
+> This is the foundation of modern AI agents — giving an LLM **tools** (like web search) so it can gather fresh context before reasoning.
