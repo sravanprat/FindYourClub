@@ -880,7 +880,7 @@ For the "url" field: only include a real URL if you are highly confident it is t
     const res = await fetch('/api/clubs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, school })
     });
 
     if (!res.ok) {

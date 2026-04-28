@@ -1,13 +1,29 @@
 export default async function handler(req, res) {
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
+  const { prompt, school } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   try {
+    // Search for the school's club page using Brave Search
+    let searchContext = '';
+    if (school && process.env.BRAVE_SEARCH_API_KEY) {
+      const searchQuery = `${school} clubs activities student organizations site`;
+      const searchRes = await fetch(
+        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(searchQuery)}&count=5`,
+        { headers: { 'X-Subscription-Token': process.env.BRAVE_SEARCH_API_KEY, 'Accept': 'application/json' } }
+      );
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        const results = (searchData.web?.results || []).map(r => `- ${r.title}: ${r.url}\n  ${r.description || ''}`).join('\n');
+        if (results) {
+          searchContext = `\n\nWeb search results for "${school}" clubs and activities:\n${results}\n\nUse these URLs as citations where relevant.`;
+        }
+      }
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -18,7 +34,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: prompt + searchContext }],
       }),
     });
 
