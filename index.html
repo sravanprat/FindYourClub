@@ -890,13 +890,14 @@ For the "url" field: only include a real URL if you are highly confident it is t
 
     const data = await res.json();
     const raw  = data.text.trim();
+    const schoolClubUrl = data.schoolClubUrl || null;
 
     // Extract JSON from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Could not parse response. Try again.');
     const parsed = JSON.parse(jsonMatch[0]);
 
-    renderResults(parsed, school, jobObjs);
+    renderResults(parsed, school, jobObjs, schoolClubUrl);
 
   } catch (err) {
     document.getElementById('loadingBox').style.display = 'none';
@@ -907,7 +908,7 @@ For the "url" field: only include a real URL if you are highly confident it is t
   }
 }
 
-function renderResults(data, school, jobObjs) {
+function renderResults(data, school, jobObjs, schoolClubUrl) {
   document.getElementById('loadingBox').style.display = 'none';
   const el = document.getElementById('resultsContent');
   el.style.display = 'block';
@@ -927,8 +928,11 @@ function renderResults(data, school, jobObjs) {
 
   function clubLink(club) {
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(club.name + ' ' + school)}`;
-    if (club.url && club.url !== 'null' && club.url.startsWith('http')) {
-      return `<a href="${club.url}" target="_blank" rel="noopener" class="club-link club-link-school">🏫 School Page</a>`;
+    const resolvedUrl = (club.url && club.url !== 'null' && club.url.startsWith('http'))
+      ? club.url
+      : schoolClubUrl;
+    if (resolvedUrl) {
+      return `<a href="${resolvedUrl}" target="_blank" rel="noopener" class="club-link club-link-school">🏫 School Page</a>`;
     }
     return `<a href="${googleUrl}" target="_blank" rel="noopener" class="club-link club-link-google">🔍 Google Search</a>`;
   }
