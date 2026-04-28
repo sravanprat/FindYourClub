@@ -1,7 +1,7 @@
 // Simple in-memory rate limit: 5 requests per IP per 10 minutes
 const rateLimit = new Map();
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_REQUESTS = 5;
+const MAX_REQUESTS = 10;
 
 function isRateLimited(ip) {
   const now = Date.now();
