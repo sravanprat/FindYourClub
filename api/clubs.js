@@ -1,6 +1,29 @@
+// Simple in-memory rate limit: 5 requests per IP per 10 minutes
+const rateLimit = new Map();
+const WINDOW_MS = 10 * 60 * 1000;
+const MAX_REQUESTS = 5;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimit.get(ip) || { count: 0, start: now };
+  if (now - entry.start > WINDOW_MS) {
+    rateLimit.set(ip, { count: 1, start: now });
+    return false;
+  }
+  if (entry.count >= MAX_REQUESTS) return true;
+  entry.count++;
+  rateLimit.set(ip, entry);
+  return false;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'unknown';
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many requests — please wait a few minutes and try again.' });
   }
 
   const { prompt, school } = req.body;
