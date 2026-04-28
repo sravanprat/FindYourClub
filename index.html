@@ -334,9 +334,17 @@
       .option-text { font-size: 14px; }
       .job-card { padding: 14px 14px; gap: 12px; }
       .job-icon { font-size: 26px; }
+      .job-meta { gap: 8px; }
+      .section-header h2 { font-size: 20px; }
+      .results-header { padding: 18px 16px; }
+      .results-header h2 { font-size: 18px; }
+      .club-card { padding: 14px 12px; gap: 10px; }
+      .club-name { font-size: 14px; }
+      .club-why { font-size: 12px; }
       .step-label { display: none; }
       .input-card { padding: 20px 16px; }
       .btn { font-size: 14px; padding: 13px 20px; }
+      footer { padding: 16px 14px; }
     }
 
     /* ── FOOTER ── */
@@ -965,7 +973,7 @@ function renderResults(data, school, jobObjs, searchLinks) {
         onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
         <span style="font-size:18px">🏫</span>
         <span style="font-size:13px;font-weight:600;color:var(--text)">${link.title}</span>
-        <span style="font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap">↗</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:auto;flex-shrink:0">↗</span>
       </a>`;
     });
     html += `</div></div>`;
