@@ -347,6 +347,29 @@
       footer { padding: 16px 14px; }
     }
 
+    /* ── PRINT / PDF ── */
+    @media print {
+      header, .progress-strip, #screen-quiz, #screen-welcome,
+      #screen-jobs, #screen-school, .restart-btn, .pdf-btn, footer { display: none !important; }
+      body { background: #fff; }
+      main { max-width: 100%; padding: 0; }
+      .screen { display: block !important; }
+      #screen-results { display: block !important; }
+      .club-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+      .results-header { background: #6366f1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      a { color: inherit; }
+      .pdf-actions { display: none !important; }
+    }
+
+    .pdf-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: none; border: 2px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .pdf-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+
     /* ── FOOTER ── */
     footer {
       text-align: center; padding: 20px;
@@ -473,7 +496,10 @@
       <p>Analyzing your career goals and finding the best matches</p>
     </div>
     <div id="resultsContent" style="display:none"></div>
-    <button class="restart-btn" onclick="restart()">↩ Start Over</button>
+    <div class="pdf-actions" id="pdfActions" style="display:none;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+      <button class="pdf-btn" onclick="window.print()">⬇️ Download PDF Report</button>
+      <button class="restart-btn" style="margin:0" onclick="restart()">↩ Start Over</button>
+    </div>
   </div>
 
 </main>
@@ -925,6 +951,7 @@ For the "url" field: only include a real URL if you are highly confident it is t
 
 function renderResults(data, school, jobObjs, searchLinks) {
   document.getElementById('loadingBox').style.display = 'none';
+  document.getElementById('pdfActions').style.display = 'flex';
   const el = document.getElementById('resultsContent');
   el.style.display = 'block';
 
