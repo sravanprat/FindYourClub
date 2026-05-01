@@ -22,7 +22,9 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 **5. You get your personalized club roadmap** — ranked by priority, with research links pulled from the web search so you can explore further.
 
-**6. 🎧 Listen as Podcast** — click the podcast button and the app turns your club roadmap into a personalized 90-second audio episode. Claude rewrites the results as a conversational podcast script, then OpenAI's Nova voice reads it aloud — playing directly in your browser. You can also expand the script to read it yourself.
+**6. 👋 Your results are saved** — next time you visit, a "Your Past Results" card appears on the home screen showing your last 3 searches. Tap "View →" on any of them to jump straight back to those club recommendations without retaking the quiz. Hit "Clear all" to remove them from your device.
+
+**7. 🎧 Listen as Podcast** — click the podcast button and the app turns your club roadmap into a personalized 90-second audio episode. Claude rewrites the results as a conversational podcast script, then OpenAI's Nova voice reads it aloud — playing directly in your browser. You can also expand the script to read it yourself.
 
 ---
 
@@ -68,6 +70,18 @@ This is the core of the product. Three services work in sequence inside `/api/cl
 - Response is parsed and rendered as club cards in the UI
 
 > This **Search → Inject → Generate** pattern is the foundation of modern AI agent design.
+
+---
+
+### Personalization — localStorage
+Quiz results are persisted on the user's device using the browser's `localStorage` API — no server storage, no accounts, no PII transmitted.
+
+- Saves up to **3 most recent results** (school, careers, clubs, search links, date)
+- On page load, `initResumeCard()` checks `localStorage` and renders a "Your Past Results" card if data exists
+- Each saved result has a **View →** button that calls `resumeResult(index)` to re-render the results screen instantly
+- **Clear all** button wipes `fyc_results` from localStorage
+- No COPPA concerns — nothing leaves the student's device
+- Key: `fyc_results` — stored as a JSON array, max 3 entries, newest first
 
 ---
 
