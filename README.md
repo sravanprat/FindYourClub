@@ -70,31 +70,46 @@ This section documents how all services and APIs are wired together. Updated as 
 ---
 
 ### Club Recommendations — Agentic Orchestration
-This is the core of the product. Three specialized AI agents run in sequence, orchestrated by Claude's native tool use API inside `/api/orchestrate.js`:
+The core of the product. Three specialized AI agents, each with its own system prompt and Claude Haiku call, are coordinated by an orchestrator inside `/api/orchestrate.js`.
 
-**Orchestrator (Claude Haiku + Tool Use)**
-- Receives the student's school and career goals
-- Decides which agent to call and in what order using Claude's native tool use API
-- Runs an agentic loop: keeps going until all three tools have been called and a final recommendation is ready
+**How it runs:**
 
-**Agent 1 — School Research Agent**
+```
+        ┌─────────────────────────┐
+        │       Orchestrator      │
+        └────────┬────────┬───────┘
+                 │        │  (parallel)
+        ┌────────▼─┐  ┌───▼──────────┐
+        │ Agent 1  │  │   Agent 2    │
+        │  School  │  │   Career     │
+        │ Research │  │  Analysis    │
+        └────────┬─┘  └───┬──────────┘
+                 └────┬───┘
+              ┌───────▼────────┐
+              │    Agent 3     │
+              │  Club Recs     │
+              └───────┬────────┘
+                      │
+                 JSON response
+```
+
+**Agent 1 — School Research Agent** (runs in parallel with Agent 2)
 - Searches the web (Brave Search API) for `[school name] clubs activities student organizations`
-- Passes top 5 results to its own Claude Haiku call with a school-profiling system prompt
-- Returns a 3-5 sentence summary of the school's extracurricular landscape
+- Feeds the top 5 results into Claude Haiku with a school-profiling system prompt
+- Returns a concise summary of the school's extracurricular landscape
 
-**Agent 2 — Career Analysis Agent**
-- Dedicated Claude Haiku call with a career counselor system prompt
-- Identifies the top 3 skills, relevant activity types, and standout leadership experiences for the target career
-- Runs in parallel with Agent 1 (orchestrator calls both before Agent 3)
+**Agent 2 — Career Analysis Agent** (runs in parallel with Agent 1)
+- Claude Haiku call with a career counselor system prompt
+- Identifies the top skills, activity types, and leadership experiences for the target career
 
-**Agent 3 — Club Recommendation Agent**
-- Receives the outputs of both Agent 1 and Agent 2
+**Agent 3 — Club Recommendation Agent** (runs after both complete)
+- Receives the outputs of Agent 1 and Agent 2 together
 - Synthesizes school context + career requirements into a ranked list of 5-7 clubs
-- Returns structured JSON: club names, HIGH/MEDIUM priority, personalized reasons, and optional URLs
+- Returns structured JSON: club names, HIGH/MEDIUM priority, personalized reasons
 
-Each agent call is traced to LangSmith separately, giving full visibility into the full pipeline.
+All three agent calls are traced to LangSmith separately for full observability.
 
-> This is a **multi-agent orchestration** pattern — the same architecture used in production AI systems like research assistants and coding agents. Each agent has a focused role, a specialized system prompt, and its own LLM call. The orchestrator ties them together.
+> Agents 1 and 2 run concurrently via `Promise.all`, so total latency is roughly `max(Agent1, Agent2) + Agent3` — not the sum of all three.
 
 ---
 
