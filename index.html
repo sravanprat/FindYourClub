@@ -669,7 +669,7 @@ function initResumeCard() {
   let html = '';
   results.forEach((d, i) => {
     html += `
-      <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid var(--border)' : ''}display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid var(--border);' : ''}display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.school}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.careers.join(' & ')} · ${d.clubs.length} clubs</div>
