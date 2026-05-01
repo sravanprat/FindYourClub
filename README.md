@@ -69,24 +69,32 @@ This section documents how all services and APIs are wired together. Updated as 
 
 ---
 
-### Club Recommendations — Agentic LLM Pipeline
-This is the core of the product. Three services work in sequence inside `/api/clubs.js`:
+### Club Recommendations — Multi-Agent LLM Pipeline
+This is the core of the product. Three specialized AI agents run in sequence, orchestrated by Claude's native tool use API inside `/api/orchestrate.js`:
 
-**Step 1 — Web Search (Brave Search API)**
-- Searches for `[school name] clubs activities student organizations`
-- Returns top 5 URLs and page titles from the school's actual website
-- Grounds Claude in real, current data rather than training memory
+**Orchestrator (Claude Haiku + Tool Use)**
+- Receives the student's school and career goals
+- Decides which agent to call and in what order using Claude's native tool use API
+- Runs an agentic loop: keeps going until all three tools have been called and a final recommendation is ready
 
-**Step 2 — Context Injection**
-- Search results are appended to the Claude prompt before sending
-- Claude receives: career goals + school name + live web search context
+**Agent 1 — School Research Agent**
+- Searches the web (Brave Search API) for `[school name] clubs activities student organizations`
+- Passes top 5 results to its own Claude Haiku call with a school-profiling system prompt
+- Returns a 3-5 sentence summary of the school's extracurricular landscape
 
-**Step 3 — LLM Generation (Claude Haiku — Anthropic)**
-- Model: `claude-haiku-4-5-20251001`
-- Returns structured JSON: ranked clubs, priorities, reasons, and optional URLs
-- Response is parsed and rendered as club cards in the UI
+**Agent 2 — Career Analysis Agent**
+- Dedicated Claude Haiku call with a career counselor system prompt
+- Identifies the top 3 skills, relevant activity types, and standout leadership experiences for the target career
+- Runs in parallel with Agent 1 (orchestrator calls both before Agent 3)
 
-> This **Search → Inject → Generate** pattern is the foundation of modern AI agent design.
+**Agent 3 — Club Recommendation Agent**
+- Receives the outputs of both Agent 1 and Agent 2
+- Synthesizes school context + career requirements into a ranked list of 5-7 clubs
+- Returns structured JSON: club names, HIGH/MEDIUM priority, personalized reasons, and optional URLs
+
+Each agent call is traced to LangSmith separately, giving full visibility into the full pipeline.
+
+> This is a **multi-agent orchestration** pattern — the same architecture used in production AI systems like research assistants and coding agents. Each agent has a focused role, a specialized system prompt, and its own LLM call. The orchestrator ties them together.
 
 ---
 
