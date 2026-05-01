@@ -1030,7 +1030,7 @@ function renderResults(data, school, jobObjs, searchLinks) {
       </div>
       <button onclick="generatePodcast()" id="podcastBtn"
         style="width:100%;margin-top:8px;padding:12px;background:#8b5cf6;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
-        🎙️ Generate Podcast Script
+        🎧 Listen as Podcast
       </button>
       <div id="podcastScript" style="display:none;margin-top:16px"></div>
     </div>`;
@@ -1039,35 +1039,57 @@ function renderResults(data, school, jobObjs, searchLinks) {
   window._podcastData = { school, careers: jobObjs.map(j=>j.title).join(' and '), clubs: data.clubs };
 }
 
-// ── PODCAST SCRIPT ──
+// ── PODCAST ──
 async function generatePodcast() {
   const btn = document.getElementById('podcastBtn');
   const box = document.getElementById('podcastScript');
   const { school, careers, clubs } = window._podcastData;
 
   btn.disabled = true;
-  btn.textContent = '✨ Writing your script...';
+  btn.textContent = '✨ Writing script...';
   box.style.display = 'none';
 
   try {
-    const res = await fetch('/api/podcast', {
+    // Step 1 — generate script
+    const scriptRes = await fetch('/api/podcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ school, careers, clubs })
     });
+    const scriptData = await scriptRes.json();
+    if (!scriptRes.ok) throw new Error(scriptData.error || 'Failed to generate script');
+    const script = scriptData.script;
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to generate script');
+    // Step 2 — convert to audio
+    btn.textContent = '🔊 Generating audio...';
+    const audioRes = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ script })
+    });
+    if (!audioRes.ok) {
+      const err = await audioRes.json();
+      throw new Error(err.error || 'Failed to generate audio');
+    }
+
+    const audioBlob = await audioRes.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
 
     box.style.display = 'block';
     box.innerHTML = `
-      <div style="font-size:13px;color:#4c1d95;line-height:1.8;background:#fff;border-radius:10px;padding:16px;border:1px solid #e9d5ff;white-space:pre-wrap">${data.script}</div>
-      <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Audio coming soon — copy this script to read aloud or paste into a TTS tool</p>`;
-    btn.textContent = '🔄 Regenerate Script';
+      <audio controls autoplay style="width:100%;border-radius:8px;margin-bottom:12px">
+        <source src="${audioUrl}" type="audio/mpeg">
+      </audio>
+      <details style="margin-top:4px">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer">View script</summary>
+        <div style="font-size:12px;color:#4c1d95;line-height:1.8;background:#fff;border-radius:10px;padding:14px;border:1px solid #e9d5ff;margin-top:8px;white-space:pre-wrap">${script}</div>
+      </details>`;
+
+    btn.textContent = '🔄 Regenerate';
     btn.disabled = false;
 
   } catch (err) {
-    btn.textContent = '🎙️ Generate Podcast Script';
+    btn.textContent = '🎧 Listen as Podcast';
     btn.disabled = false;
     box.style.display = 'block';
     box.innerHTML = `<div style="color:#991b1b;font-size:13px">⚠️ ${err.message}</div>`;
