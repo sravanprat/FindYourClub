@@ -648,21 +648,45 @@ let scores   = { management:0, finance:0, tech:0, healthcare:0, arts:0, law:0, e
 let selectedJobs = [];
 
 // ── LOCAL STORAGE ──
-function initResumeCard() {
+const MAX_SAVED = 3;
+
+function getSavedResults() {
+  try { return JSON.parse(localStorage.getItem('fyc_results') || '[]'); } catch(_) { return []; }
+}
+
+function saveResult(result) {
   try {
-    const saved = localStorage.getItem('fyc_last_result');
-    if (!saved) return;
-    const d = JSON.parse(saved);
-    document.getElementById('resumeSummary').innerHTML =
-      `<strong>${d.school}</strong> · ${d.careers.join(' & ')} · ${d.clubs.length} clubs recommended<br>
-       <span style="font-size:12px;color:var(--muted)">Saved on ${d.savedAt}</span>`;
-    document.getElementById('resumeCard').style.display = 'block';
+    const results = getSavedResults();
+    results.unshift(result);
+    if (results.length > MAX_SAVED) results.splice(MAX_SAVED);
+    localStorage.setItem('fyc_results', JSON.stringify(results));
   } catch(_) {}
 }
 
-function resumeResults() {
+function initResumeCard() {
+  const results = getSavedResults();
+  if (!results.length) return;
+
+  let html = '';
+  results.forEach((d, i) => {
+    html += `
+      <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid var(--border)' : ''}">
+        <div style="font-size:14px;font-weight:600;color:var(--text)">${d.school}</div>
+        <div style="font-size:12px;color:var(--muted);margin:2px 0">${d.careers.join(' & ')} · ${d.clubs.length} clubs · ${d.savedAt}</div>
+        <button onclick="resumeResult(${i})"
+          style="margin-top:8px;padding:7px 14px;background:var(--indigo);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          View Results
+        </button>
+      </div>`;
+  });
+
+  document.getElementById('resumeSummary').innerHTML = html;
+  document.getElementById('resumeCard').style.display = 'block';
+}
+
+function resumeResult(index) {
   try {
-    const saved = JSON.parse(localStorage.getItem('fyc_last_result'));
+    const saved = getSavedResults()[index];
     const jobObjs = saved.careers.map(title => ({ title }));
     document.getElementById('progressStrip').style.display = 'block';
     setStep(4);
@@ -674,7 +698,7 @@ function resumeResults() {
 }
 
 function clearSaved() {
-  localStorage.removeItem('fyc_last_result');
+  localStorage.removeItem('fyc_results');
   document.getElementById('resumeCard').style.display = 'none';
 }
 
@@ -1079,15 +1103,13 @@ function renderResults(data, school, jobObjs, searchLinks) {
   window._podcastData = { school, careers: jobObjs.map(j=>j.title).join(' and '), clubs: data.clubs };
 
   // Save to localStorage
-  try {
-    localStorage.setItem('fyc_last_result', JSON.stringify({
-      school,
-      careers: jobObjs.map(j => j.title),
-      clubs: data.clubs,
-      searchLinks,
-      savedAt: new Date().toLocaleDateString()
-    }));
-  } catch(_) {}
+  saveResult({
+    school,
+    careers: jobObjs.map(j => j.title),
+    clubs: data.clubs,
+    searchLinks,
+    savedAt: new Date().toLocaleDateString()
+  });
 }
 
 // ── PODCAST ──
