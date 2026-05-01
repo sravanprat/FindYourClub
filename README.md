@@ -158,9 +158,16 @@ All Claude API calls are traced to [LangSmith](https://smith.langchain.com) for 
 
 ---
 
-### PDF Export
-- Uses the browser's native `window.print()` — no libraries required.
-- Custom `@media print` CSS hides navigation, buttons, and footer, and formats the results as a clean printable document.
+### Save & Share — PDF, Infographic, Start Over
+Results are presented with a 3-action bar at the bottom — designed as equal-weight cards side by side on both desktop and mobile:
+
+| Action | How it works |
+|---|---|
+| 📄 Download PDF | Browser-native `window.print()` with `@media print` CSS — no libraries |
+| 📊 Infographic | Opens a modal with a styled visual card; "Save Image" uses `html2canvas` (CDN) to export PNG |
+| ↩ Start Over | Resets the quiz and returns to the welcome screen |
+
+The infographic card is rendered from the live club data — club names, priorities, reasons, school, and career goal — and exported at 2× resolution for a crisp image on mobile and desktop.
 
 ---
 
