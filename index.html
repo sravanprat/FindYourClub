@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FindYourClub — Discover Your Path</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -349,7 +350,6 @@
       .btn { font-size: 14px; padding: 13px 20px; }
       .pdf-btn { font-size: 13px; padding: 10px 16px; width: 100%; justify-content: center; }
       .restart-btn { width: 100%; text-align: center; }
-      #pdfActions { flex-direction: column; }
       footer { padding: 16px 14px; }
       footer > div { flex-direction: column; }
       .school-dropdown { max-height: 160px; }
@@ -377,6 +377,87 @@
       cursor: pointer; transition: all .15s;
     }
     .pdf-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+
+    /* ── ACTION BAR ── */
+    .action-bar {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-top: 24px;
+    }
+    .action-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; padding: 14px 10px;
+      background: #fff; border: 1.5px solid var(--border); border-radius: 14px;
+      cursor: pointer; transition: all .15s; text-align: center;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .action-card:hover { border-color: var(--indigo); color: var(--indigo); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.1); }
+    .action-card .action-icon { font-size: 22px; }
+    @media (max-width: 480px) {
+      .action-bar { gap: 8px; }
+      .action-card { padding: 12px 6px; font-size: 11px; }
+      .action-card .action-icon { font-size: 20px; }
+    }
+
+    /* ── INFOGRAPHIC MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.55); align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,.25);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+    .modal-close {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: var(--muted); line-height: 1; padding: 4px;
+    }
+    .modal-actions {
+      display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border);
+    }
+    .modal-actions button {
+      flex: 1; padding: 11px; border-radius: 10px; font-size: 13px;
+      font-weight: 700; cursor: pointer; transition: all .15s; border: none;
+    }
+    .modal-btn-primary { background: var(--indigo); color: #fff; }
+    .modal-btn-primary:hover { background: var(--indigo2); }
+    .modal-btn-secondary { background: #f3f4f6; color: var(--text); }
+    .modal-btn-secondary:hover { background: #e5e7eb; }
+
+    /* ── INFOGRAPHIC CARD ── */
+    #infographicCard {
+      margin: 16px 20px;
+      border-radius: 16px; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .ig-header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 20px; color: #fff; text-align: center;
+    }
+    .ig-header .ig-logo { font-size: 11px; font-weight: 800; opacity: .7; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    .ig-header h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .ig-header p { font-size: 11px; opacity: .85; line-height: 1.4; }
+    .ig-body { background: #f8f7ff; padding: 14px; }
+    .ig-section-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 10px 0 6px; }
+    .ig-section-label:first-child { margin-top: 0; }
+    .ig-club {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #fff; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+      border-left: 3px solid var(--indigo);
+    }
+    .ig-club.medium { border-left-color: #a78bfa; }
+    .ig-club-num { font-size: 13px; font-weight: 800; color: var(--indigo); min-width: 18px; }
+    .ig-club.medium .ig-club-num { color: #7c3aed; }
+    .ig-club-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .ig-club-why { font-size: 10px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+    .ig-footer { background: #6366f1; padding: 10px; text-align: center; font-size: 9px; font-weight: 700; color: rgba(255,255,255,.7); letter-spacing: .06em; text-transform: uppercase; }
 
     /* ── FOOTER ── */
     footer {
@@ -509,9 +590,34 @@
       <p id="loadingSubtitle">This takes about 10 seconds</p>
     </div>
     <div id="resultsContent" style="display:none"></div>
-    <div class="pdf-actions" id="pdfActions" style="display:none;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap">
-      <button class="pdf-btn" onclick="window.print()">⬇️ Download PDF Report</button>
-      <button class="restart-btn" style="margin:0" onclick="restart()">↩ Start Over</button>
+    <div class="action-bar" id="pdfActions" style="display:none">
+      <button class="action-card" onclick="window.print()">
+        <span class="action-icon">📄</span>
+        <span>Download PDF</span>
+      </button>
+      <button class="action-card" onclick="openInfographic()">
+        <span class="action-icon">📊</span>
+        <span>Infographic</span>
+      </button>
+      <button class="action-card" onclick="restart()">
+        <span class="action-icon">↩</span>
+        <span>Start Over</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INFOGRAPHIC MODAL -->
+  <div class="modal-overlay" id="infographicModal" onclick="if(event.target===this)closeInfographic()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📊 Your Club Infographic</h3>
+        <button class="modal-close" onclick="closeInfographic()">✕</button>
+      </div>
+      <div id="infographicCard"></div>
+      <div class="modal-actions">
+        <button class="modal-btn-secondary" onclick="window.print()">🖨 Print PDF</button>
+        <button class="modal-btn-primary" id="downloadImgBtn" onclick="downloadInfographic()" style="flex:1;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--indigo);color:#fff">⬇️ Save Image</button>
+      </div>
     </div>
   </div>
 
@@ -697,7 +803,7 @@ function resumeResult(index) {
     setStep(4);
     showScreen('results');
     document.getElementById('loadingBox').style.display = 'none';
-    document.getElementById('pdfActions').style.display = 'flex';
+    document.getElementById('pdfActions').style.display = 'grid';
     renderResults({ clubs: saved.clubs }, saved.school, jobObjs, saved.searchLinks || []);
   } catch(_) {}
 }
@@ -1011,7 +1117,7 @@ async function getClubs() {
 
 function renderResults(data, school, jobObjs, searchLinks) {
   document.getElementById('loadingBox').style.display = 'none';
-  document.getElementById('pdfActions').style.display = 'flex';
+  document.getElementById('pdfActions').style.display = 'grid';
   const el = document.getElementById('resultsContent');
   el.style.display = 'block';
 
@@ -1095,6 +1201,7 @@ function renderResults(data, school, jobObjs, searchLinks) {
 
   el.innerHTML = html;
   window._podcastData = { school, careers: jobObjs.map(j=>j.title).join(' and '), clubs: data.clubs };
+  window._infographicData = { school, careers: jobObjs.map(j=>j.title).join(' & '), clubs: data.clubs };
 
   // Save to localStorage
   saveResult({
@@ -1104,6 +1211,63 @@ function renderResults(data, school, jobObjs, searchLinks) {
     searchLinks,
     savedAt: new Date().toLocaleDateString()
   });
+}
+
+// ── INFOGRAPHIC ──
+function buildInfographicHTML({ school, careers, clubs }) {
+  const high   = clubs.filter(c => c.priority === 'HIGH');
+  const medium = clubs.filter(c => c.priority !== 'HIGH');
+  let rows = '';
+  if (high.length) {
+    rows += `<div class="ig-section-label">⭐ Top Priority</div>`;
+    high.forEach((c, i) => {
+      rows += `<div class="ig-club"><span class="ig-club-num">${i+1}</span><div><div class="ig-club-name">${c.name}</div><div class="ig-club-why">${c.why}</div></div></div>`;
+    });
+  }
+  if (medium.length) {
+    rows += `<div class="ig-section-label">📌 Also Recommended</div>`;
+    medium.forEach((c, i) => {
+      rows += `<div class="ig-club medium"><span class="ig-club-num">${high.length+i+1}</span><div><div class="ig-club-name">${c.name}</div><div class="ig-club-why">${c.why}</div></div></div>`;
+    });
+  }
+  return `
+    <div class="ig-header">
+      <div class="ig-logo">FindYourClub</div>
+      <h2>Your Club Roadmap 🎯</h2>
+      <p>${school}<br>${careers}</p>
+    </div>
+    <div class="ig-body">${rows}</div>
+    <div class="ig-footer">findyourclub · powered by claude ai</div>`;
+}
+
+function openInfographic() {
+  const card = document.getElementById('infographicCard');
+  card.innerHTML = buildInfographicHTML(window._infographicData);
+  document.getElementById('infographicModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeInfographic() {
+  document.getElementById('infographicModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function downloadInfographic() {
+  const btn = document.getElementById('downloadImgBtn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+  try {
+    const card = document.getElementById('infographicCard');
+    const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: '#f8f7ff' });
+    const link = document.createElement('a');
+    link.download = 'my-club-roadmap.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('Could not generate image. Try the Print PDF option instead.');
+  }
+  btn.textContent = '⬇️ Save Image';
+  btn.disabled = false;
 }
 
 // ── PODCAST ──
