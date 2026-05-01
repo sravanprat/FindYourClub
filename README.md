@@ -6,6 +6,23 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 ---
 
+## Table of Contents
+
+- [How It Works — End to End](#how-it-works--end-to-end)
+- [How It Was Built — Engineering & Product Overview](#how-it-was-built--engineering--product-overview)
+  - [Frontend](#frontend)
+  - [School Search](#school-search)
+  - [Club Recommendations — Agentic LLM Pipeline](#club-recommendations--agentic-llm-pipeline)
+  - [Personalization — localStorage](#personalization--localstorage)
+  - [Podcast Feature](#podcast-feature)
+  - [LLM Observability — LangSmith](#llm-observability--langsmith)
+  - [Security & Reliability](#security--reliability)
+  - [PDF Export](#pdf-export)
+  - [Testing — Playwright via GitHub Actions](#testing--playwright-via-github-actions)
+  - [Infrastructure Summary](#infrastructure-summary)
+
+---
+
 ## How It Works — End to End
 
 **1. You answer 5 quick questions** about what you enjoy — building things, helping people, solving problems, etc. The app scores your answers behind the scenes and matches you to careers from real U.S. Bureau of Labor Statistics data.
