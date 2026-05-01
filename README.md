@@ -88,7 +88,7 @@ Two additional serverless functions power the podcast:
 
 ### Security & Reliability
 - **API key protection** — all API keys (Anthropic, Brave, OpenAI) stored as Vercel environment variables. Never exposed to the browser.
-- **Rate limiting** — `/api/clubs` enforces 10 requests per IP per 10 minutes using in-memory tracking in the serverless function.
+- **Rate limiting** — `/api/clubs` enforces per-IP request limits using in-memory tracking in the serverless function to prevent abuse.
 - **Privacy** — no user data is collected, stored, or logged. No cookies, no sign-up, no tracking.
 
 ---
