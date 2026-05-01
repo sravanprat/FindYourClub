@@ -505,8 +505,8 @@
   <div class="screen" id="screen-results">
     <div id="loadingBox" class="loading-box">
       <div class="loading-spinner"></div>
-      <strong>Searching for clubs at your school...</strong>
-      <p>Analyzing your career goals and finding the best matches</p>
+      <strong id="loadingTitle">Searching the web for your school's clubs...</strong>
+      <p id="loadingSubtitle">This takes about 10 seconds</p>
     </div>
     <div id="resultsContent" style="display:none"></div>
     <div class="pdf-actions" id="pdfActions" style="display:none;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap">
@@ -965,6 +965,22 @@ async function getClubs() {
   document.getElementById('loadingBox').style.display    = 'block';
   document.getElementById('resultsContent').style.display = 'none';
 
+  const loadingSteps = [
+    { title: '🔍 Searching the web for your school\'s clubs...', sub: 'Scanning your school\'s activities pages' },
+    { title: '🎓 Researching what ' + jobNames + ' really needs...', sub: 'Identifying key skills and experiences' },
+    { title: '🤖 Three AI agents are comparing notes...', sub: 'School research + career analysis underway' },
+    { title: '✨ Ranking the best clubs for you...', sub: 'Almost there — building your personalized list' },
+  ];
+  let stepIdx = 0;
+  function updateLoadingText() {
+    const s = loadingSteps[stepIdx % loadingSteps.length];
+    document.getElementById('loadingTitle').textContent = s.title;
+    document.getElementById('loadingSubtitle').textContent = s.sub;
+    stepIdx++;
+  }
+  updateLoadingText();
+  const loadingTimer = setInterval(updateLoadingText, 3000);
+
   try {
     const res = await fetch('/api/orchestrate', {
       method: 'POST',
@@ -977,12 +993,14 @@ async function getClubs() {
       throw new Error(err.error || `API error ${res.status}`);
     }
 
+    clearInterval(loadingTimer);
     const data = await res.json();
     const searchLinks = data.searchLinks || [];
 
     renderResults(data.clubs, school, jobObjs, searchLinks);
 
   } catch (err) {
+    clearInterval(loadingTimer);
     document.getElementById('loadingBox').style.display = 'none';
     document.getElementById('resultsContent').style.display = 'block';
     document.getElementById('resultsContent').innerHTML = `
