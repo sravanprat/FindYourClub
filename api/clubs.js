@@ -48,15 +48,12 @@ export default async function handler(req, res) {
       }
     }
 
-    const response = await fetch('https://anthropic.helicone.ai/v1/messages', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
-        'Helicone-Auth': `Bearer ${process.env.HELICONE_API_KEY}`,
-        'Helicone-Property-Feature': 'club-recommendations',
-        'Helicone-Property-School': school || 'unknown',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
