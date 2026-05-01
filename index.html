@@ -1018,9 +1018,60 @@ function renderResults(data, school, jobObjs, searchLinks) {
   html += `
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 18px;font-size:13px;color:#166534;line-height:1.6">
       💡 <strong>Pro tip:</strong> Don't just join — aim for a <strong>leadership position</strong> by sophomore or junior year. Being an officer means far more to college admissions than being a member.
+    </div>
+
+    <div style="margin-top:20px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:16px;padding:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:24px">🎙️</span>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#5b21b6">Your Personalized Podcast</div>
+          <div style="font-size:12px;color:var(--muted)">Hear your club roadmap as a 90-second podcast script</div>
+        </div>
+      </div>
+      <button onclick="generatePodcast()" id="podcastBtn"
+        style="width:100%;margin-top:8px;padding:12px;background:#8b5cf6;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+        🎙️ Generate Podcast Script
+      </button>
+      <div id="podcastScript" style="display:none;margin-top:16px"></div>
     </div>`;
 
   el.innerHTML = html;
+  window._podcastData = { school, careers: jobObjs.map(j=>j.title).join(' and '), clubs: data.clubs };
+}
+
+// ── PODCAST SCRIPT ──
+async function generatePodcast() {
+  const btn = document.getElementById('podcastBtn');
+  const box = document.getElementById('podcastScript');
+  const { school, careers, clubs } = window._podcastData;
+
+  btn.disabled = true;
+  btn.textContent = '✨ Writing your script...';
+  box.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/podcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ school, careers, clubs })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate script');
+
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="font-size:13px;color:#4c1d95;line-height:1.8;background:#fff;border-radius:10px;padding:16px;border:1px solid #e9d5ff;white-space:pre-wrap">${data.script}</div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Audio coming soon — copy this script to read aloud or paste into a TTS tool</p>`;
+    btn.textContent = '🔄 Regenerate Script';
+    btn.disabled = false;
+
+  } catch (err) {
+    btn.textContent = '🎙️ Generate Podcast Script';
+    btn.disabled = false;
+    box.style.display = 'block';
+    box.innerHTML = `<div style="color:#991b1b;font-size:13px">⚠️ ${err.message}</div>`;
+  }
 }
 
 // ── NAVIGATION ──
