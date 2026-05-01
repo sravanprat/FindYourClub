@@ -109,119 +109,26 @@ async function callClaude({ system, prompt, max_tokens, agentName }) {
   return data.content[0].text;
 }
 
-// ── ORCHESTRATOR (Claude with tool use) ──
+// ── ORCHESTRATOR ──
 async function orchestrate({ school, careers }) {
-  const tools = [
-    {
-      name: 'research_school',
-      description: 'Research a school\'s available clubs and activities using web search. Call this first.',
-      input_schema: {
-        type: 'object',
-        properties: { school_name: { type: 'string', description: 'Full name of the high school' } },
-        required: ['school_name']
-      }
-    },
-    {
-      name: 'analyze_career',
-      description: 'Analyze what skills and activities are important for a career path. Call this second.',
-      input_schema: {
-        type: 'object',
-        properties: { careers: { type: 'string', description: 'Career(s) the student is interested in' } },
-        required: ['careers']
-      }
-    },
-    {
-      name: 'recommend_clubs',
-      description: 'Recommend clubs based on school research and career analysis. Call this last after you have both research results.',
-      input_schema: {
-        type: 'object',
-        properties: {
-          school_context: { type: 'string' },
-          career_requirements: { type: 'string' },
-          school_name: { type: 'string' },
-          careers: { type: 'string' }
-        },
-        required: ['school_context', 'career_requirements', 'school_name', 'careers']
-      }
-    }
-  ];
-
-  const messages = [{
-    role: 'user',
-    content: `A high school freshman at "${school}" is interested in becoming a ${careers}.
-Use your tools to: 1) research the school, 2) analyze the career requirements, 3) recommend the best clubs.
-Call all three tools in order.`
-  }];
-
-  let searchLinks = [];
-  let finalResult = null;
-  let clubsResult = null;
   const startTime = Date.now();
 
-  // Agentic loop — keep going until Claude stops calling tools
-  for (let i = 0; i < 10; i++) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
-        tools,
-        messages,
-      }),
-    });
+  // Run school research and career analysis in parallel
+  const [schoolResult, careerResult] = await Promise.all([
+    researchSchool({ school_name: school }),
+    analyzeCareer({ careers }),
+  ]);
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || 'Orchestrator error');
-    }
+  const { summary: school_context, searchLinks } = schoolResult;
+  const { analysis: career_requirements } = careerResult;
 
-    const data = await res.json();
-    messages.push({ role: 'assistant', content: data.content });
-
-    if (data.stop_reason === 'end_turn') {
-      // Claude finished — extract final text response
-      const textBlock = data.content.find(b => b.type === 'text');
-      if (textBlock) finalResult = textBlock.text;
-      break;
-    }
-
-    if (data.stop_reason === 'tool_use') {
-      const toolResults = [];
-
-      for (const block of data.content) {
-        if (block.type !== 'tool_use') continue;
-
-        let toolOutput;
-        if (block.name === 'research_school') {
-          const result = await researchSchool(block.input);
-          searchLinks = result.searchLinks;
-          toolOutput = result.summary;
-        } else if (block.name === 'analyze_career') {
-          const result = await analyzeCareer(block.input);
-          toolOutput = result.analysis;
-        } else if (block.name === 'recommend_clubs') {
-          const result = await recommendClubs(block.input);
-          toolOutput = result.recommendations;
-          clubsResult = result.recommendations;
-        }
-
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: block.id,
-          content: typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput),
-        });
-      }
-
-      messages.push({ role: 'user', content: toolResults });
-    }
-  }
-
-  finalResult = clubsResult || finalResult;
+  // Recommend clubs using both results
+  const { recommendations: finalResult } = await recommendClubs({
+    school_context,
+    career_requirements,
+    school_name: school,
+    careers,
+  });
 
   await logToLangSmith({ name: 'orchestrator', inputs: { school, careers }, outputs: { finalResult }, startTime });
 
