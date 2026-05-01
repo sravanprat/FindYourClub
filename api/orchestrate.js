@@ -155,6 +155,7 @@ Call all three tools in order.`
 
   let searchLinks = [];
   let finalResult = null;
+  let clubsResult = null;
   const startTime = Date.now();
 
   // Agentic loop — keep going until Claude stops calling tools
@@ -206,7 +207,7 @@ Call all three tools in order.`
         } else if (block.name === 'recommend_clubs') {
           const result = await recommendClubs(block.input);
           toolOutput = result.recommendations;
-          finalResult = result.recommendations;
+          clubsResult = result.recommendations;
         }
 
         toolResults.push({
@@ -219,6 +220,8 @@ Call all three tools in order.`
       messages.push({ role: 'user', content: toolResults });
     }
   }
+
+  finalResult = clubsResult || finalResult;
 
   await logToLangSmith({ name: 'orchestrator', inputs: { school, careers }, outputs: { finalResult }, startTime });
 
