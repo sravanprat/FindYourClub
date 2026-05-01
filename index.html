@@ -962,34 +962,11 @@ async function getClubs() {
   document.getElementById('loadingBox').style.display    = 'block';
   document.getElementById('resultsContent').style.display = 'none';
 
-  const prompt = `A high school freshman at "${school}" is interested in becoming a ${jobNames}.
-
-Your task:
-1. Search your knowledge for clubs that likely exist at "${school}". If uncertain, recommend clubs typical for similar schools in that area.
-2. Recommend the TOP 5-7 clubs this student should join, ranked by importance for their career goals.
-3. For each club explain in 1-2 sentences WHY it specifically helps with ${jobNames}.
-4. Mark each as HIGH or MEDIUM priority.
-
-Format your response as JSON only — no extra text — like this:
-{
-  "school_note": "brief note about how confident you are about this school's specific clubs",
-  "clubs": [
-    {
-      "name": "Club Name",
-      "priority": "HIGH",
-      "why": "Why this club helps with their career goal",
-      "url": "https://actual-school-website.edu/clubs/club-page OR null if unknown"
-    }
-  ]
-}
-
-For the "url" field: only include a real URL if you are highly confident it is the correct, current page on the school's official website. Set it to null if you are not certain.`;
-
   try {
-    const res = await fetch('/api/clubs', {
+    const res = await fetch('/api/orchestrate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, school })
+      body: JSON.stringify({ school, careers: jobNames })
     });
 
     if (!res.ok) {
@@ -998,15 +975,9 @@ For the "url" field: only include a real URL if you are highly confident it is t
     }
 
     const data = await res.json();
-    const raw  = data.text.trim();
     const searchLinks = data.searchLinks || [];
 
-    // Extract JSON from response
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Could not parse response. Try again.');
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    renderResults(parsed, school, jobObjs, searchLinks);
+    renderResults(data.clubs, school, jobObjs, searchLinks);
 
   } catch (err) {
     document.getElementById('loadingBox').style.display = 'none';
