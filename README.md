@@ -86,6 +86,17 @@ Two additional serverless functions power the podcast:
 
 ---
 
+### LLM Observability — LangSmith
+All Claude API calls are traced to [LangSmith](https://smith.langchain.com) for monitoring and debugging.
+
+- **`club-recommendations`** — traces every club recommendation call with school name, full prompt, and Claude's response
+- **`podcast-script`** — traces every podcast script generation with school, careers, and output script
+- Traces include latency, inputs, outputs, and errors
+- Implemented via direct REST API calls to `api.smith.langchain.com/runs` — no npm package dependency
+- Configured via `LANGCHAIN_API_KEY` and `LANGCHAIN_PROJECT` environment variables in Vercel
+
+---
+
 ### Security & Reliability
 - **API key protection** — all API keys (Anthropic, Brave, OpenAI) stored as Vercel environment variables. Never exposed to the browser.
 - **Rate limiting** — `/api/clubs` enforces per-IP request limits using in-memory tracking in the serverless function to prevent abuse.
