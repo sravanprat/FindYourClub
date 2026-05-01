@@ -435,6 +435,15 @@
       </button>
       <p style="font-size:12px;color:var(--muted);margin-top:14px">Takes about 2 minutes · Free · No sign-up</p>
     </div>
+
+    <div id="resumeCard" style="display:none;margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;text-align:left">
+      <div style="font-size:12px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">👋 Welcome Back</div>
+      <div id="resumeSummary" style="font-size:14px;color:var(--text);margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="resumeResults()" class="btn btn-primary" style="flex:1;padding:10px">View My Results</button>
+        <button onclick="clearSaved()" style="padding:10px 14px;background:none;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer">Clear</button>
+      </div>
+    </div>
   </div>
 
   <!-- SCREEN 2: QUIZ -->
@@ -512,7 +521,7 @@
       Career data: <a href="https://www.bls.gov/news.release/ocwage.t01.htm" target="_blank">U.S. Bureau of Labor Statistics</a> · Built with Claude AI
     </div>
     <div style="font-size:10px;color:var(--muted);opacity:0.55;text-align:center;max-width:520px;line-height:1.5">
-      For informational purposes only. Not a substitute for guidance from your school counselor or parents. We do not collect or store personal information. Anthropic and Brave Search may process query data per their own privacy policies. A student-built project by Veda P.
+      For informational purposes only. Not a substitute for guidance from your school counselor or parents. We do not collect, store, or share any personal information on our servers. Your quiz results are saved locally on your device only and never transmitted to us. Anthropic and Brave Search may process query data per their own privacy policies. A student-built project by Veda P.
     </div>
   </div>
 </footer>
@@ -637,6 +646,37 @@ let currentQ = 0;
 let answers  = [];
 let scores   = { management:0, finance:0, tech:0, healthcare:0, arts:0, law:0, education:0, engineering:0, science:0 };
 let selectedJobs = [];
+
+// ── LOCAL STORAGE ──
+function initResumeCard() {
+  try {
+    const saved = localStorage.getItem('fyc_last_result');
+    if (!saved) return;
+    const d = JSON.parse(saved);
+    document.getElementById('resumeSummary').innerHTML =
+      `<strong>${d.school}</strong> · ${d.careers.join(' & ')} · ${d.clubs.length} clubs recommended<br>
+       <span style="font-size:12px;color:var(--muted)">Saved on ${d.savedAt}</span>`;
+    document.getElementById('resumeCard').style.display = 'block';
+  } catch(_) {}
+}
+
+function resumeResults() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('fyc_last_result'));
+    const jobObjs = saved.careers.map(title => ({ title }));
+    document.getElementById('progressStrip').style.display = 'block';
+    setStep(4);
+    showScreen('results');
+    document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('pdfActions').style.display = 'flex';
+    renderResults({ clubs: saved.clubs }, saved.school, jobObjs, saved.searchLinks || []);
+  } catch(_) {}
+}
+
+function clearSaved() {
+  localStorage.removeItem('fyc_last_result');
+  document.getElementById('resumeCard').style.display = 'none';
+}
 
 // ── QUIZ LOGIC ──
 function startQuiz() {
@@ -1037,6 +1077,17 @@ function renderResults(data, school, jobObjs, searchLinks) {
 
   el.innerHTML = html;
   window._podcastData = { school, careers: jobObjs.map(j=>j.title).join(' and '), clubs: data.clubs };
+
+  // Save to localStorage
+  try {
+    localStorage.setItem('fyc_last_result', JSON.stringify({
+      school,
+      careers: jobObjs.map(j => j.title),
+      clubs: data.clubs,
+      searchLinks,
+      savedAt: new Date().toLocaleDateString()
+    }));
+  } catch(_) {}
 }
 
 // ── PODCAST ──
@@ -1118,7 +1169,11 @@ function restart() {
   scores={ management:0, finance:0, tech:0, healthcare:0, arts:0, law:0, education:0, engineering:0, science:0 };
   document.getElementById('progressStrip').style.display='none';
   showScreen('welcome');
+  initResumeCard();
 }
+
+// Init on load
+initResumeCard();
 </script>
 </body>
 </html>
