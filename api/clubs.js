@@ -1,3 +1,6 @@
+import { Client } from 'langsmith';
+import { traceable } from 'langsmith/traceable';
+
 // Simple in-memory rate limit: per IP per window
 const rateLimit = new Map();
 const WINDOW_MS = 10 * 60 * 1000;
@@ -15,6 +18,31 @@ function isRateLimited(ip) {
   rateLimit.set(ip, entry);
   return false;
 }
+
+const callClaude = traceable(
+  async ({ prompt, school }) => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+    const data = await response.json();
+    return data.content[0].text;
+  },
+  { name: 'club-recommendations', metadata: { school: 'unknown' } }
+);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -48,27 +76,8 @@ export default async function handler(req, res) {
       }
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt + searchContext }],
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      return res.status(response.status).json({ error: err.error?.message || 'API error' });
-    }
-
-    const data = await response.json();
-    return res.status(200).json({ text: data.content[0].text, searchLinks });
+    const text = await callClaude({ prompt: prompt + searchContext, school });
+    return res.status(200).json({ text, searchLinks });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

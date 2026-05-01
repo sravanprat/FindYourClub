@@ -1,6 +1,9 @@
 {
   "name": "findyourclub",
   "version": "1.0.0",
+  "dependencies": {
+    "langsmith": "^0.1.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.44.0"
   }

@@ -1,3 +1,30 @@
+import { traceable } from 'langsmith/traceable';
+
+const generateScript = traceable(
+  async ({ prompt }) => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+    const data = await response.json();
+    return data.content[0].text.trim();
+  },
+  { name: 'podcast-script' }
+);
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -23,28 +50,8 @@ Guidelines:
 - Keep it upbeat and real, not corporate or stiff`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      return res.status(response.status).json({ error: err.error?.message || 'API error' });
-    }
-
-    const data = await response.json();
-    return res.status(200).json({ script: data.content[0].text.trim() });
-
+    const script = await generateScript({ prompt });
+    return res.status(200).json({ script });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
