@@ -323,6 +323,8 @@
 
     /* ── MOBILE ── */
     @media (max-width: 480px) {
+      header { padding: 0 14px; }
+      .progress-strip { padding: 10px 14px; }
       main { padding: 20px 14px 48px; }
       .hero { padding: 28px 16px 24px; }
       .hero h1 { font-size: 24px; }
@@ -350,6 +352,7 @@
       #pdfActions { flex-direction: column; }
       footer { padding: 16px 14px; }
       footer > div { flex-direction: column; }
+      .school-dropdown { max-height: 160px; }
     }
 
     /* ── PRINT / PDF ── */
@@ -436,10 +439,10 @@
       <p style="font-size:12px;color:var(--muted);margin-top:14px">Takes about 2 minutes · Free · No sign-up</p>
     </div>
 
-    <div id="resumeCard" style="display:none;margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;text-align:left">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div id="resumeCard" style="display:none;margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;text-align:left">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
         <div style="font-size:12px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.05em">👋 Your Past Results</div>
-        <button onclick="clearSaved()" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);cursor:pointer">Clear all</button>
+        <button onclick="clearSaved()" style="flex-shrink:0;padding:8px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);cursor:pointer;min-height:36px">Clear all</button>
       </div>
       <div id="resumeSummary"></div>
     </div>
@@ -669,14 +672,14 @@ function initResumeCard() {
   let html = '';
   results.forEach((d, i) => {
     html += `
-      <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid var(--border);' : ''}display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid var(--border);' : ''}display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.school}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.careers.join(' & ')} · ${d.clubs.length} clubs</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.school}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.careers.join(' & ')} · ${d.clubs.length} clubs</div>
           <div style="font-size:11px;color:var(--muted);opacity:0.7">${d.savedAt}</div>
         </div>
         <button onclick="resumeResult(${i})"
-          style="flex-shrink:0;padding:8px 16px;background:var(--indigo);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+          style="flex-shrink:0;padding:10px 16px;background:var(--indigo);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:40px">
           View →
         </button>
       </div>`;
