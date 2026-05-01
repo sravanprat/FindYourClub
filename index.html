@@ -1165,18 +1165,24 @@ function renderResults(data, school, jobObjs, searchLinks) {
   }
 
   if (searchLinks.length) {
-    html += `<div class="club-section"><div class="club-section-title">🔗 Recommended Links</div>`;
-    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-    searchLinks.forEach(link => {
-      html += `<a href="${link.url}" target="_blank" rel="noopener"
+    const linkItems = searchLinks.map(link => `
+      <a href="${link.url}" target="_blank" rel="noopener"
         style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;transition:border-color .15s"
         onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
         <span style="font-size:18px">🏫</span>
-        <span style="font-size:13px;font-weight:600;color:var(--text)">${link.title}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.title}</span>
         <span style="font-size:11px;color:var(--muted);margin-left:auto;flex-shrink:0">↗</span>
-      </a>`;
-    });
-    html += `</div></div>`;
+      </a>`).join('');
+    html += `
+      <div class="club-section">
+        <details>
+          <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:700;color:var(--text);user-select:none">
+            <span>🔗 Recommended Links <span style="font-size:12px;font-weight:500;color:var(--muted)">(${searchLinks.length})</span></span>
+            <span style="font-size:12px;color:var(--muted)" class="details-arrow">▼</span>
+          </summary>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${linkItems}</div>
+        </details>
+      </div>`;
   }
 
   html += `
