@@ -1,6 +1,3 @@
-import { Client } from 'langsmith';
-import { traceable } from 'langsmith/traceable';
-
 // Simple in-memory rate limit: per IP per window
 const rateLimit = new Map();
 const WINDOW_MS = 10 * 60 * 1000;
@@ -19,30 +16,28 @@ function isRateLimited(ip) {
   return false;
 }
 
-const callClaude = traceable(
-  async ({ prompt, school }) => {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+async function logToLangSmith({ name, inputs, outputs, startTime, error }) {
+  if (!process.env.LANGCHAIN_API_KEY) return;
+  try {
+    await fetch('https://api.smith.langchain.com/runs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-api-key': process.env.LANGCHAIN_API_KEY,
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
+        name,
+        run_type: 'llm',
+        inputs,
+        outputs: error ? undefined : outputs,
+        error: error || undefined,
+        start_time: startTime,
+        end_time: Date.now(),
+        extra: { project: process.env.LANGCHAIN_PROJECT || 'FindYourClub' },
       }),
     });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'API error');
-    }
-    const data = await response.json();
-    return data.content[0].text;
-  },
-  { name: 'club-recommendations', metadata: { school: 'unknown' } }
-);
+  } catch (_) {}
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -76,7 +71,34 @@ export default async function handler(req, res) {
       }
     }
 
-    const text = await callClaude({ prompt: prompt + searchContext, school });
+    const fullPrompt = prompt + searchContext;
+    const startTime = Date.now();
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: fullPrompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      await logToLangSmith({ name: 'club-recommendations', inputs: { school, prompt: fullPrompt }, startTime, error: err.error?.message });
+      return res.status(response.status).json({ error: err.error?.message || 'API error' });
+    }
+
+    const data = await response.json();
+    const text = data.content[0].text;
+
+    await logToLangSmith({ name: 'club-recommendations', inputs: { school, prompt: fullPrompt }, outputs: { text }, startTime });
+
     return res.status(200).json({ text, searchLinks });
 
   } catch (err) {
