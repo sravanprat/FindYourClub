@@ -12,7 +12,7 @@ FindYourClub helps high school students discover the right clubs based on their 
 - [How It Was Built — Engineering & Product Overview](#how-it-was-built--engineering--product-overview)
   - [Frontend](#frontend)
   - [School Search](#school-search)
-  - [Club Recommendations — Agentic LLM Pipeline](#club-recommendations--agentic-llm-pipeline)
+  - [Club Recommendations — Agentic Orchestration](#club-recommendations--agentic-orchestration)
   - [Personalization — localStorage](#personalization--localstorage)
   - [Podcast Feature](#podcast-feature)
   - [LLM Observability — LangSmith](#llm-observability--langsmith)
@@ -69,7 +69,7 @@ This section documents how all services and APIs are wired together. Updated as 
 
 ---
 
-### Club Recommendations — Multi-Agent LLM Pipeline
+### Club Recommendations — Agentic Orchestration
 This is the core of the product. Three specialized AI agents run in sequence, orchestrated by Claude's native tool use API inside `/api/orchestrate.js`:
 
 **Orchestrator (Claude Haiku + Tool Use)**
