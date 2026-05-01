@@ -22,6 +22,8 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 **5. You get your personalized club roadmap** — ranked by priority, with research links pulled from the web search so you can explore further.
 
+**6. 🎧 Listen as Podcast** — click the podcast button and the app turns your club roadmap into a personalized 90-second audio episode. Claude rewrites the results as a conversational podcast script, then OpenAI's Nova voice reads it aloud — playing directly in your browser. You can also expand the script to read it yourself.
+
 ---
 
 > **The big idea:** Instead of just asking an AI "what clubs should I join?", we first go fetch real information about your specific school, then hand that to the AI as context. This is called the **Search → Inject → Generate** pattern — the foundation of how modern AI agents work.
