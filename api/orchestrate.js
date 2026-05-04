@@ -117,11 +117,45 @@ async function callClaude({ system, prompt, max_tokens, agentName }) {
   return data.content[0].text;
 }
 
+// ── CRITIQUE AGENT ──
+async function critiqueRecommendations({ clubs, school_name, careers, school_context, career_requirements }) {
+  const clubList = clubs.map((c, i) =>
+    `${i + 1}. ${c.name} (${c.priority}): ${c.why}`
+  ).join('\n');
+
+  const res = await callClaude({
+    system: 'You are a critical evaluator acting as an impartial judge for AI-generated club recommendations. Score each club honestly — not every recommendation deserves a high score. Be rigorous.',
+    prompt: `Judge these club recommendations for a student at "${school_name}" pursuing: ${careers}
+
+School context: ${school_context}
+Career requirements: ${career_requirements}
+
+Clubs to evaluate:
+${clubList}
+
+Score each club 1.0–10.0 on how well it aligns with BOTH the school and the career path.
+Scoring guide: 9–10 = exceptional fit, 7–8 = good fit, 5–6 = moderate, below 5 = weak.
+
+Return JSON only:
+{
+  "overall_quality": 8.4,
+  "critique_summary": "one sentence overall assessment of this roadmap",
+  "clubs": [
+    { "name": "Club Name", "score": 9.2, "critique": "one sentence explaining the score" }
+  ]
+}`,
+    max_tokens: 800,
+    agentName: 'critique-agent'
+  });
+
+  return { critique: res };
+}
+
 // ── ORCHESTRATOR ──
 async function orchestrate({ school, careers, feedback }) {
   const startTime = Date.now();
 
-  // Run school research and career analysis in parallel
+  // Step 1: School research + career analysis in parallel
   const [schoolResult, careerResult] = await Promise.all([
     researchSchool({ school_name: school }),
     analyzeCareer({ careers }),
@@ -130,14 +164,46 @@ async function orchestrate({ school, careers, feedback }) {
   const { summary: school_context, searchLinks } = schoolResult;
   const { analysis: career_requirements } = careerResult;
 
-  // Recommend clubs using both results (+ optional feedback)
-  const { recommendations: finalResult } = await recommendClubs({
+  // Step 2: Recommend clubs
+  const { recommendations: rawRecommendations } = await recommendClubs({
     school_context,
     career_requirements,
     school_name: school,
     careers,
     feedback,
   });
+
+  // Parse recommendations
+  const recMatch = rawRecommendations.match(/\{[\s\S]*\}/);
+  if (!recMatch) throw new Error('Could not parse recommendations.');
+  const recommendedData = JSON.parse(recMatch[0]);
+
+  // Step 3: Critique agent — LLM as judge
+  const { critique: rawCritique } = await critiqueRecommendations({
+    clubs: recommendedData.clubs,
+    school_name: school,
+    careers,
+    school_context,
+    career_requirements,
+  });
+
+  // Merge critique scores into clubs
+  try {
+    const critiqueMatch = rawCritique.match(/\{[\s\S]*\}/);
+    if (critiqueMatch) {
+      const critiqueData = JSON.parse(critiqueMatch[0]);
+      recommendedData.overall_quality = critiqueData.overall_quality;
+      recommendedData.critique_summary = critiqueData.critique_summary;
+      recommendedData.clubs = recommendedData.clubs.map(club => {
+        const judged = critiqueData.clubs?.find(
+          x => x.name.toLowerCase() === club.name.toLowerCase()
+        );
+        return judged ? { ...club, score: judged.score, critique: judged.critique } : club;
+      });
+    }
+  } catch (_) {}
+
+  const finalResult = JSON.stringify(recommendedData);
 
   await logToLangSmith({ name: 'orchestrator', inputs: { school, careers, feedback }, outputs: { finalResult }, startTime });
 
@@ -202,9 +268,8 @@ export default async function handler(req, res) {
   try {
     const { finalResult, searchLinks } = await orchestrate({ school, careers, feedback });
 
-    const jsonMatch = finalResult?.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Could not parse agent response. Try again.');
-    const parsed = JSON.parse(jsonMatch[0]);
+    if (!finalResult) throw new Error('No response from agents. Try again.');
+    const parsed = JSON.parse(finalResult);
 
     return res.status(200).json({ clubs: parsed, searchLinks });
   } catch (err) {

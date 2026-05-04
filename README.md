@@ -80,22 +80,28 @@ The core of the product. Three specialized AI agents, each with its own system p
 **How it runs:**
 
 ```
-        ┌─────────────────────────┐
-        │       Orchestrator      │
-        └────────┬────────┬───────┘
-                 │        │  (parallel)
-        ┌────────▼─┐  ┌───▼──────────┐
-        │ Agent 1  │  │   Agent 2    │
-        │  School  │  │   Career     │
-        │ Research │  │  Analysis    │
-        └────────┬─┘  └───┬──────────┘
-                 └────┬───┘
-              ┌───────▼────────┐
-              │    Agent 3     │
-              │  Club Recs     │
-              └───────┬────────┘
-                      │
-                 JSON response
+        ┌─────────────────────────────────────────────┐
+        │                 Orchestrator                │
+        └────────┬────────────────────┬───────────────┘
+                 │ (parallel)         │ (parallel)
+        ┌────────▼──────┐    ┌────────▼──────┐
+        │   Agent 1     │    │   Agent 2     │
+        │ School        │    │ Career        │
+        │ Research      │    │ Analysis      │
+        └────────┬──────┘    └────────┬──────┘
+                 └─────────┬──────────┘
+                   ┌───────▼────────┐
+                   │   Agent 3      │
+                   │ Club           │
+                   │ Recommendations│
+                   └───────┬────────┘
+                   ┌───────▼────────┐
+                   │   Agent 4      │
+                   │ Critique /     │
+                   │ LLM as Judge   │
+                   └───────┬────────┘
+                           │
+                    Scored JSON response
 ```
 
 **Agent 1 — School Research Agent** (runs in parallel with Agent 2)
@@ -113,9 +119,16 @@ The core of the product. Three specialized AI agents, each with its own system p
 - Returns structured JSON: club names, HIGH/MEDIUM priority, personalized reasons
 - If user feedback is present, the prompt is extended: liked clubs guide similar suggestions; disliked clubs are excluded
 
-All three agent calls are traced to LangSmith separately for full observability. Feedback refine events are logged as a separate `club-feedback` run.
+**Agent 4 — Critique Agent (LLM as Judge)** (runs after Agent 3)
+- An independent Claude Haiku call acting as an impartial evaluator
+- Scores each club 1.0–10.0 on alignment with the school and career path
+- Produces a one-line critique per club and an overall quality score
+- Scores are merged back into the club data and displayed as color-coded badges in the UI
+- Logged to LangSmith as `critique-agent` for quality monitoring over time
 
-> Agents 1 and 2 run concurrently via `Promise.all`, so total latency is roughly `max(Agent1, Agent2) + Agent3` — not the sum of all three.
+All four agent calls are traced to LangSmith separately. Feedback refine events are logged as `club-feedback`.
+
+> Agents 1 and 2 run concurrently via `Promise.all`. Total latency ≈ `max(Agent1, Agent2) + Agent3 + Agent4`.
 
 ---
 
