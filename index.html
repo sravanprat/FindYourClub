@@ -388,7 +388,7 @@
       font-size: 14px; font-weight: 600; color: var(--muted);
       cursor: pointer; transition: all .15s;
     }
-    .pdf-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+    .pdf-btn:hover { border-color: var(--primary); color: var(--primary); }
 
     /* ── ACTION BAR ── */
     .action-bar {
@@ -462,7 +462,7 @@
     .ig-club {
       display: flex; align-items: flex-start; gap: 10px;
       background: #fff; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
-      border-left: 3px solid var(--indigo);
+      border-left: 3px solid var(--primary);
     }
     .ig-club.medium { border-left-color: #a78bfa; }
     .ig-club-num { font-size: 13px; font-weight: 800; color: var(--primary); min-width: 18px; }
@@ -477,7 +477,7 @@
       font-size: 12px; color: var(--muted);
       border-top: 1px solid var(--border); margin-top: 40px;
     }
-    footer a { color: var(--indigo); text-decoration: none; }
+    footer a { color: var(--primary); text-decoration: none; }
   </style>
 </head>
 <body>
@@ -534,7 +534,7 @@
 
     <div id="resumeCard" style="display:none;margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;text-align:left">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px">
-        <div style="font-size:12px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.05em">👋 Your Past Results</div>
+        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em">👋 Your Past Results</div>
         <button onclick="clearSaved()" style="flex-shrink:0;padding:8px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);cursor:pointer;min-height:36px">Clear all</button>
       </div>
       <div id="resumeSummary"></div>
@@ -628,7 +628,7 @@
       <div id="infographicCard"></div>
       <div class="modal-actions">
         <button class="modal-btn-secondary" onclick="window.print()">🖨 Print PDF</button>
-        <button class="modal-btn-primary" id="downloadImgBtn" onclick="downloadInfographic()" style="flex:1;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--indigo);color:#fff">⬇️ Save Image</button>
+        <button class="modal-btn-primary" id="downloadImgBtn" onclick="downloadInfographic()" style="flex:1;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--primary);color:#fff">⬇️ Save Image</button>
       </div>
     </div>
   </div>
@@ -797,7 +797,7 @@ function initResumeCard() {
           <div style="font-size:11px;color:var(--muted);opacity:0.7">${d.savedAt}</div>
         </div>
         <button onclick="resumeResult(${i})"
-          style="flex-shrink:0;padding:10px 16px;background:var(--indigo);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:40px">
+          style="flex-shrink:0;padding:10px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:40px">
           View →
         </button>
       </div>`;
@@ -1180,7 +1180,7 @@ function renderResults(data, school, jobObjs, searchLinks) {
     const linkItems = searchLinks.map(link => `
       <a href="${link.url}" target="_blank" rel="noopener"
         style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;transition:border-color .15s"
-        onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
+        onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
         <span style="font-size:18px">🏫</span>
         <span style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.title}</span>
         <span style="font-size:11px;color:var(--muted);margin-left:auto;flex-shrink:0">↗</span>
