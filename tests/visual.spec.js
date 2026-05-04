@@ -2,12 +2,14 @@ import { test, expect } from '@playwright/test';
 
 const MOCK_CLUBS = {
   school_note: 'Stone Bridge High School has strong STEM and business programs.',
+  overall_quality: 8.7,
+  critique_summary: 'Strong lineup with excellent alignment to both the school\'s STEM offerings and a marketing career path.',
   clubs: [
-    { name: 'FBLA', priority: 'HIGH', why: 'Builds business and leadership skills.', url: null },
-    { name: 'Debate Club', priority: 'HIGH', why: 'Develops communication and persuasion.', url: null },
-    { name: 'Computer Science Club', priority: 'HIGH', why: 'Technical skills for digital marketing.', url: null },
-    { name: 'Yearbook', priority: 'MEDIUM', why: 'Hands-on design and storytelling.', url: null },
-    { name: 'Key Club', priority: 'MEDIUM', why: 'Community service leadership.', url: null },
+    { name: 'FBLA', priority: 'HIGH', why: 'Builds business and leadership skills.', url: null, score: 9.2, critique: 'Exceptional fit — business fundamentals directly transfer to marketing roles.' },
+    { name: 'Debate Club', priority: 'HIGH', why: 'Develops communication and persuasion.', url: null, score: 8.5, critique: 'Strong communication development; persuasion is core to marketing.' },
+    { name: 'Computer Science Club', priority: 'HIGH', why: 'Technical skills for digital marketing.', url: null, score: 8.1, critique: 'Good fit for digital marketing track; builds technical fluency.' },
+    { name: 'Yearbook', priority: 'MEDIUM', why: 'Hands-on design and storytelling.', url: null, score: 7.4, critique: 'Solid creative experience; storytelling is valuable in content marketing.' },
+    { name: 'Key Club', priority: 'MEDIUM', why: 'Community service leadership.', url: null, score: 6.8, critique: 'Moderate fit; leadership experience is useful but less career-specific.' },
   ]
 };
 
@@ -86,6 +88,13 @@ test.describe('Visual — Desktop (1280×800)', () => {
     await page.screenshot({ path: 'screenshots/desktop-infographic.png', fullPage: true });
   });
 
+  test('critique banner and score badges', async ({ page }) => {
+    await goToResults(page);
+    await expect(page.locator('.critique-banner')).toBeVisible();
+    await expect(page.locator('.score-badge').first()).toBeVisible();
+    await page.screenshot({ path: 'screenshots/desktop-critique.png', fullPage: true });
+  });
+
 });
 
 // ── MOBILE ────────────────────────────────────────────────────
@@ -138,6 +147,13 @@ test.describe('Visual — Mobile (390×844, iPhone 14)', () => {
     await page.locator('.action-card').nth(1).click();
     await expect(page.locator('.modal-overlay')).toHaveClass(/open/);
     await page.screenshot({ path: 'screenshots/mobile-infographic.png', fullPage: true });
+  });
+
+  test('critique banner and score badges on mobile', async ({ page }) => {
+    await goToResults(page);
+    await expect(page.locator('.critique-banner')).toBeVisible();
+    await expect(page.locator('.score-badge').first()).toBeVisible();
+    await page.screenshot({ path: 'screenshots/mobile-critique.png', fullPage: true });
   });
 
 });

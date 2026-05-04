@@ -32,11 +32,12 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 **3. You type your high school name.** As you type, the app searches a database of 102,000 U.S. public schools in real time to find your school.
 
-**4. Here's where the AI magic happens.** The moment you click "Find My Clubs", three specialized AI agents fire in parallel on our server:
+**4. Here's where the AI magic happens.** The moment you click "Find My Clubs", four specialized AI agents run in sequence on our server:
 
 - 🔍 **School Research Agent** — searches the web for your school's clubs and activities pages using Brave Search, then summarizes what it finds.
-- 🎓 **Career Analysis Agent** — identifies the top skills, activity types, and leadership experiences needed for your chosen career.
+- 🎓 **Career Analysis Agent** — identifies the top skills, activity types, and leadership experiences needed for your chosen career. *(runs in parallel with School Research)*
 - ✨ **Club Recommendation Agent** — receives both outputs and synthesizes them into a ranked, personalized list of clubs with reasons why each one fits your school and career path.
+- 🤖 **Critique Agent** — acts as an impartial judge, scoring each club 1–10 on fit and producing a one-line critique. Scores appear as color-coded badges on every club card.
 
 **5. You get your personalized club roadmap** — ranked by priority, with research links from the web search so you can explore further.
 
@@ -50,7 +51,7 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 ---
 
-> **The big idea:** Three AI agents work in parallel — one researches your school, one analyzes your career, one combines both into your personalized roadmap. You rate the results, and the agents refine. This is **agentic AI with a human feedback loop** — the same architecture used in production AI systems.
+> **The big idea:** Four AI agents work in a coordinated pipeline — two in parallel to research your school and career, one to synthesize recommendations, and one to independently judge the quality of those recommendations. You rate the results and the agents refine. This is **agentic AI with self-evaluation and a human feedback loop** — the same architecture used in production AI systems.
 
 ---
 
@@ -173,8 +174,16 @@ Two additional serverless functions power the podcast:
 ### LLM Observability — LangSmith
 All Claude API calls are traced to [LangSmith](https://smith.langchain.com) for monitoring and debugging.
 
-- **`club-recommendations`** — traces every club recommendation call with school name, full prompt, and Claude's response
-- **`podcast-script`** — traces every podcast script generation with school, careers, and output script
+| Trace name | What it captures |
+|---|---|
+| `school-research-agent` | School web search + summary |
+| `career-analysis-agent` | Career skills breakdown |
+| `club-recommendation-agent` | Agent 3 full prompt + club JSON |
+| `critique-agent` | Agent 4 scores and critiques per club |
+| `orchestrator` | End-to-end inputs, outputs, and latency |
+| `club-feedback` | Liked/disliked arrays from refine events |
+| `podcast-script` | Podcast script generation |
+
 - Traces include latency, inputs, outputs, and errors
 - Implemented via direct REST API calls to `api.smith.langchain.com/runs` — no npm package dependency
 - Configured via `LANGCHAIN_API_KEY` and `LANGCHAIN_PROJECT` environment variables in Vercel
@@ -183,7 +192,7 @@ All Claude API calls are traced to [LangSmith](https://smith.langchain.com) for 
 
 ### Security & Reliability
 - **API key protection** — all API keys (Anthropic, Brave, OpenAI) stored as Vercel environment variables. Never exposed to the browser.
-- **Rate limiting** — `/api/clubs` enforces per-IP request limits using in-memory tracking in the serverless function to prevent abuse.
+- **Rate limiting** — `/api/orchestrate` enforces per-IP request limits (10 requests per 10 minutes) using in-memory tracking in the serverless function to prevent abuse.
 - **Privacy** — no user data is collected, stored, or logged. No cookies, no sign-up, no tracking.
 
 ---
@@ -206,9 +215,12 @@ Automated tests run on every push to `main` via `.github/workflows/playwright.ym
 
 | Test Suite | File | What it covers |
 |---|---|---|
-| End-to-end | `tests/e2e.spec.js` | Full quiz flow, school search, career selection |
-| Visual | `tests/visual.spec.js` | Screenshots of each screen (desktop + mobile) |
-| API | `tests/api.spec.js` | `/api/clubs` and `/api/podcast` responses and error handling |
+| End-to-end | `tests/e2e.spec.js` | Full quiz flow, school search, career selection, thumbs feedback, refine bar, infographic modal |
+| Critique Agent | `tests/e2e.spec.js` | Critique banner, score badges (green/amber/gray), per-club critique text, graceful fallback when scores absent |
+| Visual | `tests/visual.spec.js` | Screenshots of each screen on desktop (1280×800) and mobile (390×844), including critique banner |
+| API | `tests/api.spec.js` | `/api/orchestrate` recommendations + critique scores, feedback refinement, `/api/podcast` script, error handling |
+
+All results screens use mocked API responses (`page.route()`) so tests run fast and deterministically without hitting Claude or Brave Search. API tests hit the live Vercel deployment.
 
 Screenshots and HTML reports are uploaded as GitHub Actions artifacts on every run.
 

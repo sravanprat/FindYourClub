@@ -20,6 +20,25 @@ test.describe('API Tests', () => {
     expect(club).toHaveProperty('why');
   });
 
+  test('/api/orchestrate includes critique agent scores', async ({ request }) => {
+    const res = await request.post(`${BASE}/api/orchestrate`, {
+      data: { school: 'Stone Bridge High School', careers: 'Software Engineer' },
+      timeout: 45000
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.clubs).toHaveProperty('overall_quality');
+    expect(body.clubs).toHaveProperty('critique_summary');
+    expect(typeof body.clubs.overall_quality).toBe('number');
+    expect(body.clubs.overall_quality).toBeGreaterThan(0);
+    expect(body.clubs.overall_quality).toBeLessThanOrEqual(10);
+    // Each club should have a score and critique from Agent 4
+    const club = body.clubs.clubs[0];
+    expect(club).toHaveProperty('score');
+    expect(club).toHaveProperty('critique');
+    expect(typeof club.score).toBe('number');
+  });
+
   test('/api/orchestrate refines with feedback', async ({ request }) => {
     const res = await request.post(`${BASE}/api/orchestrate`, {
       data: {
