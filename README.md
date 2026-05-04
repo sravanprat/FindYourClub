@@ -106,10 +106,22 @@ The core of the product. Three specialized AI agents, each with its own system p
 - Receives the outputs of Agent 1 and Agent 2 together
 - Synthesizes school context + career requirements into a ranked list of 5-7 clubs
 - Returns structured JSON: club names, HIGH/MEDIUM priority, personalized reasons
+- If user feedback is present, the prompt is extended: liked clubs guide similar suggestions; disliked clubs are excluded
 
-All three agent calls are traced to LangSmith separately for full observability.
+All three agent calls are traced to LangSmith separately for full observability. Feedback refine events are logged as a separate `club-feedback` run.
 
 > Agents 1 and 2 run concurrently via `Promise.all`, so total latency is roughly `max(Agent1, Agent2) + Agent3` — not the sum of all three.
+
+---
+
+### Human-in-the-Loop Feedback
+Each club card shows a 👍 / 👎 button. Ratings are tracked per session and stored in `localStorage` under `fyc_feedback`.
+
+- After the first rating, a **"✨ Refine My List"** bar slides up from the bottom
+- Clicking it re-runs the full agent pipeline with the feedback injected into Agent 3's prompt
+- Liked clubs → agent recommends similar ones; disliked clubs → agent excludes them
+- Every refine event is logged to LangSmith as `club-feedback` with liked/disliked arrays and count
+- Ratings history persists across sessions (up to 20 entries) — no PII, device-only
 
 ---
 

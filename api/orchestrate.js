@@ -50,8 +50,16 @@ Be specific and concise — 4-6 sentences total.`,
   return { analysis: res };
 }
 
-async function recommendClubs({ school_context, career_requirements, school_name, careers }) {
+async function recommendClubs({ school_context, career_requirements, school_name, careers, feedback }) {
   // Club Recommendation Agent: synthesizes school + career data into ranked recommendations
+  let feedbackSection = '';
+  if (feedback && (feedback.liked?.length || feedback.disliked?.length)) {
+    feedbackSection = `\n\nStudent feedback on previous recommendations:
+${feedback.liked?.length  ? `Clubs they LIKED — recommend clubs similar to these: ${feedback.liked.join(', ')}` : ''}
+${feedback.disliked?.length ? `Clubs they DISLIKED — exclude these and anything similar: ${feedback.disliked.join(', ')}` : ''}
+Use this feedback to meaningfully improve the recommendations.`;
+  }
+
   const res = await callClaude({
     system: 'You are a club recommendation agent. You receive research about a school and career requirements, then recommend the best clubs for a student.',
     prompt: `A freshman at "${school_name}" wants to pursue a career as: ${careers}
@@ -60,9 +68,9 @@ School profile:
 ${school_context}
 
 Career requirements:
-${career_requirements}
+${career_requirements}${feedbackSection}
 
-Based on both, recommend the TOP 5-7 clubs ranked by importance. For each explain in 1-2 sentences why it matches both the school AND the career path. Mark each HIGH or MEDIUM priority.
+Based on all of the above, recommend the TOP 5-7 clubs ranked by importance. For each explain in 1-2 sentences why it matches both the school AND the career path. Mark each HIGH or MEDIUM priority.
 
 Return JSON only:
 {
@@ -110,7 +118,7 @@ async function callClaude({ system, prompt, max_tokens, agentName }) {
 }
 
 // ── ORCHESTRATOR ──
-async function orchestrate({ school, careers }) {
+async function orchestrate({ school, careers, feedback }) {
   const startTime = Date.now();
 
   // Run school research and career analysis in parallel
@@ -122,15 +130,16 @@ async function orchestrate({ school, careers }) {
   const { summary: school_context, searchLinks } = schoolResult;
   const { analysis: career_requirements } = careerResult;
 
-  // Recommend clubs using both results
+  // Recommend clubs using both results (+ optional feedback)
   const { recommendations: finalResult } = await recommendClubs({
     school_context,
     career_requirements,
     school_name: school,
     careers,
+    feedback,
   });
 
-  await logToLangSmith({ name: 'orchestrator', inputs: { school, careers }, outputs: { finalResult }, startTime });
+  await logToLangSmith({ name: 'orchestrator', inputs: { school, careers, feedback }, outputs: { finalResult }, startTime });
 
   return { finalResult, searchLinks };
 }
@@ -177,11 +186,21 @@ export default async function handler(req, res) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'unknown';
   if (isRateLimited(ip)) return res.status(429).json({ error: 'Too many requests — please wait a few minutes and try again.' });
 
-  const { school, careers } = req.body;
+  const { school, careers, feedback } = req.body;
   if (!school || !careers) return res.status(400).json({ error: 'Missing school or careers' });
 
+  // Log feedback event to LangSmith when a refine request comes in
+  if (feedback && (feedback.liked?.length || feedback.disliked?.length)) {
+    await logToLangSmith({
+      name: 'club-feedback',
+      inputs: { school, careers, liked: feedback.liked, disliked: feedback.disliked },
+      outputs: { total_rated: (feedback.liked?.length || 0) + (feedback.disliked?.length || 0) },
+      startTime: Date.now(),
+    });
+  }
+
   try {
-    const { finalResult, searchLinks } = await orchestrate({ school, careers });
+    const { finalResult, searchLinks } = await orchestrate({ school, careers, feedback });
 
     const jsonMatch = finalResult?.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Could not parse agent response. Try again.');

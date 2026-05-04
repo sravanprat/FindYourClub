@@ -390,6 +390,42 @@
     }
     .pdf-btn:hover { border-color: var(--primary); color: var(--primary); }
 
+    /* ── THUMBS ── */
+    .thumb-btns { display: flex; gap: 6px; margin-top: 8px; }
+    .thumb-btn {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 5px 11px; font-size: 14px;
+      cursor: pointer; transition: all .15s; line-height: 1;
+      font-family: inherit;
+    }
+    .thumb-btn:hover { border-color: var(--muted); transform: scale(1.1); }
+    .thumb-btn.up   { background: #dcfce7; border-color: #86efac; }
+    .thumb-btn.down { background: #fee2e2; border-color: #fca5a5; }
+
+    /* ── REFINE BAR ── */
+    .refine-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+      background: #fff; border-top: 2px solid var(--border);
+      padding: 12px 20px; display: none;
+      box-shadow: 0 -4px 24px rgba(0,0,0,.1);
+      align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .refine-bar.visible { display: flex; }
+    .refine-bar-text { font-size: 13px; font-weight: 700; color: var(--text); }
+    .refine-bar-text em { font-style: normal; color: var(--muted); font-weight: 500; }
+    .refine-btn {
+      flex-shrink: 0; background: var(--primary); color: #fff; border: none;
+      border-radius: 10px; padding: 10px 20px; font-size: 14px;
+      font-weight: 800; cursor: pointer; font-family: inherit;
+      transition: background .15s; white-space: nowrap;
+    }
+    .refine-btn:hover { background: var(--primary2); }
+    @media (max-width: 480px) {
+      .refine-bar { padding: 10px 14px; }
+      .refine-bar-text { font-size: 12px; }
+      .refine-btn { padding: 10px 14px; font-size: 13px; }
+    }
+
     /* ── ACTION BAR ── */
     .action-bar {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -616,6 +652,12 @@
         <span>Start Over</span>
       </button>
     </div>
+  </div>
+
+  <!-- REFINE BAR -->
+  <div class="refine-bar" id="refineBar">
+    <div class="refine-bar-text" id="refineBarText"></div>
+    <button class="refine-btn" onclick="refineRecommendations()">✨ Refine My List</button>
   </div>
 
   <!-- INFOGRAPHIC MODAL -->
@@ -1135,6 +1177,26 @@ function renderResults(data, school, jobObjs, searchLinks) {
 
   const high   = data.clubs.filter(c=>c.priority==='HIGH');
   const medium = data.clubs.filter(c=>c.priority==='MEDIUM');
+  window._allClubs = [...high, ...medium];
+  window._clubRatings = {};
+  document.getElementById('refineBar').classList.remove('visible');
+
+  function clubCard(club, rankNum, rankClass, priorityClass, priorityLabel, idx) {
+    return `<div class="club-card">
+      <div class="club-rank ${rankClass}">${rankNum}</div>
+      <div class="club-body">
+        <div class="club-name">${club.name}</div>
+        <div class="club-why">${club.why}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:6px">
+          <span class="club-priority ${priorityClass}">${priorityLabel}</span>
+          <div class="thumb-btns">
+            <button class="thumb-btn" id="up_${idx}" onclick="rateClub(${idx},'up')" title="Good match">👍</button>
+            <button class="thumb-btn" id="down_${idx}" onclick="rateClub(${idx},'down')" title="Not for me">👎</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
 
   let html = `
     <div class="results-header">
@@ -1148,31 +1210,13 @@ function renderResults(data, school, jobObjs, searchLinks) {
 
   if (high.length) {
     html += `<div class="club-section"><div class="club-section-title">⭐ Top Priority — Join These First</div>`;
-    high.forEach((club,i) => {
-      html += `<div class="club-card">
-        <div class="club-rank top">${i+1}</div>
-        <div class="club-body">
-          <div class="club-name">${club.name}</div>
-          <div class="club-why">${club.why}</div>
-          <span class="club-priority priority-high">High Priority</span>
-        </div>
-      </div>`;
-    });
+    high.forEach((club,i) => { html += clubCard(club, i+1, 'top', 'priority-high', 'High Priority', i); });
     html += `</div>`;
   }
 
   if (medium.length) {
     html += `<div class="club-section"><div class="club-section-title">📌 Also Recommended</div>`;
-    medium.forEach((club,i) => {
-      html += `<div class="club-card">
-        <div class="club-rank">${high.length+i+1}</div>
-        <div class="club-body">
-          <div class="club-name">${club.name}</div>
-          <div class="club-why">${club.why}</div>
-          <span class="club-priority priority-medium">Medium Priority</span>
-        </div>
-      </div>`;
-    });
+    medium.forEach((club,i) => { html += clubCard(club, high.length+i+1, '', 'priority-medium', 'Medium Priority', high.length+i); });
     html += `</div>`;
   }
 
@@ -1229,6 +1273,107 @@ function renderResults(data, school, jobObjs, searchLinks) {
     searchLinks,
     savedAt: new Date().toLocaleDateString()
   });
+}
+
+// ── FEEDBACK ──
+window._clubRatings = {};
+window._allClubs = [];
+
+function rateClub(idx, direction) {
+  const club = window._allClubs[idx];
+  if (!club) return;
+  const name = club.name;
+  const current = window._clubRatings[name];
+
+  if (current === direction) {
+    delete window._clubRatings[name];
+    document.getElementById('up_' + idx)?.classList.remove('up');
+    document.getElementById('down_' + idx)?.classList.remove('down');
+  } else {
+    window._clubRatings[name] = direction;
+    if (direction === 'up') {
+      document.getElementById('up_' + idx)?.classList.add('up');
+      document.getElementById('down_' + idx)?.classList.remove('down');
+    } else {
+      document.getElementById('down_' + idx)?.classList.add('down');
+      document.getElementById('up_' + idx)?.classList.remove('up');
+    }
+  }
+  updateRefineBar();
+  saveFeedbackToStorage();
+}
+
+function updateRefineBar() {
+  const ratings = window._clubRatings;
+  const liked    = Object.values(ratings).filter(v => v === 'up').length;
+  const disliked = Object.values(ratings).filter(v => v === 'down').length;
+  const bar = document.getElementById('refineBar');
+  if (!liked && !disliked) { bar.classList.remove('visible'); return; }
+  const parts = [];
+  if (liked)    parts.push(`${liked} 👍`);
+  if (disliked) parts.push(`${disliked} 👎`);
+  document.getElementById('refineBarText').innerHTML =
+    `<em>${parts.join(' · ')} rated</em> — refine your list`;
+  bar.classList.add('visible');
+}
+
+function saveFeedbackToStorage() {
+  const school  = window._infographicData?.school;
+  const careers = window._infographicData?.careers;
+  if (!school) return;
+  try {
+    const entry = { school, careers, ratings: { ...window._clubRatings }, ratedAt: new Date().toLocaleDateString() };
+    const all = JSON.parse(localStorage.getItem('fyc_feedback') || '[]');
+    const idx = all.findIndex(e => e.school === school && e.careers === careers);
+    if (idx >= 0) all[idx] = entry; else all.unshift(entry);
+    localStorage.setItem('fyc_feedback', JSON.stringify(all.slice(0, 20)));
+  } catch(_) {}
+}
+
+async function refineRecommendations() {
+  const liked    = Object.entries(window._clubRatings).filter(([,v]) => v === 'up').map(([k]) => k);
+  const disliked = Object.entries(window._clubRatings).filter(([,v]) => v === 'down').map(([k]) => k);
+  const school   = window._infographicData?.school;
+  const careers  = window._podcastData?.careers;
+  const jobObjs  = selectedJobs.map(id => JOBS.find(x => x.id === id));
+
+  document.getElementById('refineBar').classList.remove('visible');
+  document.getElementById('resultsContent').style.display = 'none';
+  document.getElementById('pdfActions').style.display = 'none';
+  document.getElementById('loadingBox').style.display = 'block';
+
+  const steps = [
+    { title: '🔄 Reading your feedback...', sub: 'Understanding what works for you' },
+    { title: '✨ Refining your club matches...', sub: 'Personalizing based on your ratings' },
+    { title: '🎯 Almost ready...', sub: 'Building your updated roadmap' },
+  ];
+  let si = 0;
+  const setStep = () => {
+    const s = steps[si++ % steps.length];
+    document.getElementById('loadingTitle').textContent = s.title;
+    document.getElementById('loadingSubtitle').textContent = s.sub;
+  };
+  setStep();
+  const timer = setInterval(setStep, 2500);
+
+  try {
+    const res = await fetch('/api/orchestrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ school, careers, feedback: { liked, disliked } })
+    });
+    clearInterval(timer);
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'API error'); }
+    const data = await res.json();
+    renderResults(data.clubs, selectedSchool, jobObjs, data.searchLinks || []);
+  } catch(err) {
+    clearInterval(timer);
+    document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('resultsContent').style.display = 'block';
+    document.getElementById('pdfActions').style.display = 'grid';
+    document.getElementById('refineBar').classList.add('visible');
+    alert('Could not refine recommendations. Please try again.');
+  }
 }
 
 // ── INFOGRAPHIC ──
