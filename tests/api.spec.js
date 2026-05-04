@@ -6,23 +6,40 @@ test.describe('API Tests', () => {
 
   test('/api/orchestrate returns club recommendations', async ({ request }) => {
     const res = await request.post(`${BASE}/api/orchestrate`, {
-      data: {
-        school: 'Stone Bridge High School',
-        careers: 'Marketing Manager'
-      },
+      data: { school: 'Stone Bridge High School', careers: 'Marketing Manager' },
       timeout: 30000
     });
-
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty('clubs');
-    expect(body.clubs).toHaveProperty('clubs');
     expect(Array.isArray(body.clubs.clubs)).toBe(true);
     expect(body.clubs.clubs.length).toBeGreaterThan(0);
     const club = body.clubs.clubs[0];
     expect(club).toHaveProperty('name');
     expect(club).toHaveProperty('priority');
     expect(club).toHaveProperty('why');
+  });
+
+  test('/api/orchestrate refines with feedback', async ({ request }) => {
+    const res = await request.post(`${BASE}/api/orchestrate`, {
+      data: {
+        school: 'Stone Bridge High School',
+        careers: 'Software Engineer',
+        feedback: {
+          liked: ['Computer Science Club', 'Robotics Club'],
+          disliked: ['Drama Club']
+        }
+      },
+      timeout: 30000
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty('clubs');
+    expect(Array.isArray(body.clubs.clubs)).toBe(true);
+    expect(body.clubs.clubs.length).toBeGreaterThan(0);
+    // Disliked club should not appear in refined results
+    const names = body.clubs.clubs.map(c => c.name.toLowerCase());
+    expect(names).not.toContain('drama club');
   });
 
   test('/api/orchestrate rejects missing fields', async ({ request }) => {
@@ -49,7 +66,6 @@ test.describe('API Tests', () => {
         ]
       }
     });
-
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty('script');
