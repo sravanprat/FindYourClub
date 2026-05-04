@@ -13,11 +13,12 @@ FindYourClub helps high school students discover the right clubs based on their 
   - [Frontend](#frontend)
   - [School Search](#school-search)
   - [Club Recommendations — Agentic Orchestration](#club-recommendations--agentic-orchestration)
+  - [Human-in-the-Loop Feedback](#human-in-the-loop-feedback)
   - [Personalization — localStorage](#personalization--localstorage)
   - [Podcast Feature](#podcast-feature)
   - [LLM Observability — LangSmith](#llm-observability--langsmith)
   - [Security & Reliability](#security--reliability)
-  - [PDF Export](#pdf-export)
+  - [Save & Share — PDF, Infographic, Start Over](#save--share--pdf-infographic-start-over)
   - [Testing — Playwright via GitHub Actions](#testing--playwright-via-github-actions)
   - [Infrastructure Summary](#infrastructure-summary)
 
@@ -31,21 +32,25 @@ FindYourClub helps high school students discover the right clubs based on their 
 
 **3. You type your high school name.** As you type, the app searches a database of 102,000 U.S. public schools in real time to find your school.
 
-**4. Here's where the AI magic happens.** The moment you click "Find My Clubs", three things happen in sequence on our server:
+**4. Here's where the AI magic happens.** The moment you click "Find My Clubs", three specialized AI agents fire in parallel on our server:
 
-- 🔍 **We search the web first** — using Brave Search, we look up your school's clubs and activities pages and grab the top results.
-- 💉 **We feed that into the AI** — those real URLs and page descriptions get added to the prompt we send to Claude (Anthropic's AI), so it's working with fresh, school-specific context — not just guessing from memory.
-- ✨ **Claude thinks and responds** — it reads your career goals, your school, and the web search context, then returns a ranked list of clubs with personalized reasons why each one helps your specific career path.
+- 🔍 **School Research Agent** — searches the web for your school's clubs and activities pages using Brave Search, then summarizes what it finds.
+- 🎓 **Career Analysis Agent** — identifies the top skills, activity types, and leadership experiences needed for your chosen career.
+- ✨ **Club Recommendation Agent** — receives both outputs and synthesizes them into a ranked, personalized list of clubs with reasons why each one fits your school and career path.
 
-**5. You get your personalized club roadmap** — ranked by priority, with research links pulled from the web search so you can explore further.
+**5. You get your personalized club roadmap** — ranked by priority, with research links from the web search so you can explore further.
 
-**6. 👋 Your results are saved** — next time you visit, a "Your Past Results" card appears on the home screen showing your last 3 searches. Tap "View →" on any of them to jump straight back to those club recommendations without retaking the quiz. Hit "Clear all" to remove them from your device.
+**6. 👍 Rate and refine** — each club card has a thumbs up / thumbs down. After rating, a "✨ Refine My List" bar appears. Tap it and the agents re-run with your feedback — liked clubs guide similar suggestions, disliked clubs get replaced. This is the **human-in-the-loop** pattern.
 
-**7. 🎧 Listen as Podcast** — click the podcast button and the app turns your club roadmap into a personalized 90-second audio episode. Claude rewrites the results as a conversational podcast script, then OpenAI's Nova voice reads it aloud — playing directly in your browser. You can also expand the script to read it yourself.
+**7. 👋 Your results are saved** — next time you visit, a "Your Past Results" card shows your last 3 searches. Tap "View →" to jump straight back without retaking the quiz.
+
+**8. 🎧 Listen as Podcast** — the app turns your club roadmap into a personalized 90-second audio episode. Claude writes the script, OpenAI's Nova voice reads it aloud in your browser.
+
+**9. 📊 Save as Infographic** — export your club roadmap as a downloadable image or PDF to share with parents or your school counselor.
 
 ---
 
-> **The big idea:** Instead of just asking an AI "what clubs should I join?", we first go fetch real information about your specific school, then hand that to the AI as context. This is called the **Search → Inject → Generate** pattern — the foundation of how modern AI agents work.
+> **The big idea:** Three AI agents work in parallel — one researches your school, one analyzes your career, one combines both into your personalized roadmap. You rate the results, and the agents refine. This is **agentic AI with a human feedback loop** — the same architecture used in production AI systems.
 
 ---
 
